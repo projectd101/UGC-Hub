@@ -49,7 +49,7 @@ export default function Landing() {
   return (
     <div className={styles.page}>
       <header className={styles.header}><div className={styles.headerInner}>
-        <span className={styles.logo}>UGC Hub</span>
+        <span className={`${styles.logo} ugcBrandMark`} aria-label="UGC Hub"><span className="ugcBrandMark__ugc">UGC</span><span className="ugcBrandMark__hub">Hub</span></span>
         <nav className={styles.nav}><a href="#marketplace">Examples</a><a href="#how-it-works">How it works</a><a href="#pricing">Pricing</a><a href="#faq">FAQ</a></nav>
         <div className={styles.headerActions}><button className={styles.ghostBtn} onClick={goToSignIn}>Sign in</button><button className={styles.primaryBtn} onClick={goToSignIn}>Browse creators</button></div>
       </div></header>
