@@ -24,23 +24,39 @@
 [class*="compareColAccent"] ul { color:rgba(255,255,255,.72) !important; }
 [class*="compareColAccent"] li:before { color:#9fe0c4 !important; }
 
-/* Keep each comparison title on one line, starting exactly where the card's kicker/content starts. */
-[class*="compareCol"] h2,[class*="compareColAccent"] h2 {
+/* Comparison heading: the title must begin on the exact same left edge as its kicker above it. */
+[class*="compareCol"] > [class*="sectionKicker"],
+[class*="compareColAccent"] > [class*="sectionKicker"] {
   display:block !important;
-  box-sizing:border-box !important;
   width:100% !important;
-  max-width:none !important;
-  min-width:0 !important;
   margin-left:0 !important;
   margin-right:0 !important;
   padding-left:0 !important;
   padding-right:0 !important;
+  text-align:left !important;
+  transform:none !important;
+  translate:none !important;
+}
+[class*="compareCol"] > h2,
+[class*="compareColAccent"] > h2 {
+  display:block !important;
+  position:static !important;
+  box-sizing:border-box !important;
+  width:100% !important;
+  max-width:100% !important;
+  min-width:0 !important;
+  margin:12px 0 0 0 !important;
+  padding:0 !important;
+  text-align:left !important;
+  text-indent:0 !important;
+  transform:none !important;
+  translate:none !important;
   white-space:nowrap !important;
   overflow:hidden !important;
   text-overflow:clip !important;
   word-break:normal !important;
   overflow-wrap:normal !important;
-  font-size:clamp(22px,2.15vw,31px) !important;
+  font-size:clamp(21px,2.05vw,29px) !important;
   line-height:1.05 !important;
   letter-spacing:-.035em !important;
 }
@@ -76,7 +92,7 @@
   [class*="compare"] { grid-template-columns:1fr !important; }
   [class*="steps"] > div { grid-template-columns:52px minmax(0,1fr) !important; column-gap:16px !important; }
   [class*="steps"] > div > h3,[class*="steps"] > div > p { white-space:normal !important; }
-  [class*="compareCol"] h2,[class*="compareColAccent"] h2 { white-space:normal !important; width:100% !important; max-width:100% !important; margin-left:0 !important; padding-left:0 !important; padding-right:0 !important; overflow-wrap:normal !important; }
+  [class*="compareCol"] > h2,[class*="compareColAccent"] > h2 { white-space:normal !important; width:100% !important; max-width:100% !important; margin-left:0 !important; padding-left:0 !important; padding-right:0 !important; }
   [class*="bundleCards"] article { aspect-ratio:9 / 16 !important; }
   [class*="creatorCta"] { flex-direction:column !important; align-items:flex-start !important; }
 }
