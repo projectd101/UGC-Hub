@@ -23,13 +23,11 @@ export default function SignIn() {
           </div>
 
           <div className={styles.choice}>
-            <button className={`${styles.option} ${styles.founder}`} onClick={() => signInWithGoogle("founder")}>
-              <span>Founder</span>
-              <small>Buy creator reaction libraries</small>
+            <button className={styles.option} onClick={() => signInWithGoogle("founder")}>
+              Continue as Founder
             </button>
-            <button className={`${styles.option} ${styles.creator}`} onClick={() => signInWithGoogle("creator")}>
-              <span>Creator</span>
-              <small>Sell your reaction libraries</small>
+            <button className={styles.option} onClick={() => signInWithGoogle("creator")}>
+              Continue as Creator
             </button>
           </div>
         </div>
