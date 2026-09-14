@@ -1,0 +1,33 @@
+/* Remove the large structural divider rules between landing-page sections. */
+.marketplace,
+.reactionExplorer,
+.how,
+.bundleSection,
+.rights {
+  border-top: 0 !important;
+}
+
+.rights {
+  border-bottom: 0 !important;
+}
+
+.filters,
+.reactionGrid,
+.steps {
+  border-top: 0 !important;
+}
+
+.steps {
+  border-bottom: 0 !important;
+}
+
+.steps > div,
+.rightsGrid div,
+.cardBottom,
+.reactionItem {
+  border-bottom: 0 !important;
+}
+
+.steps > div {
+  border-right: 0 !important;
+}
