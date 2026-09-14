@@ -25,3 +25,162 @@
 [class*="steps"] > div {
   border-right: 0 !important;
 }
+
+/* From Reaction library downward: use a calmer, vertically flowing editorial layout. */
+[class*="reactionExplorer"],
+[class*="compare"],
+[class*="how"],
+[class*="bundleSection"],
+[class*="rights"] {
+  width: min(1120px, calc(100% - 64px));
+  max-width: 1120px;
+}
+
+[class*="reactionExplorer"] {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 42px !important;
+  padding-top: 76px !important;
+  padding-bottom: 76px !important;
+}
+
+[class*="reactionExplorer"] [class*="sectionTop"] {
+  max-width: 760px;
+}
+
+[class*="reactionGrid"] {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 0 32px !important;
+}
+
+[class*="reactionItem"] {
+  min-height: 76px;
+}
+
+[class*="compare"] {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 18px !important;
+  padding-top: 10px !important;
+  padding-bottom: 76px !important;
+}
+
+[class*="compareCol"],
+[class*="compareColAccent"] {
+  padding: 32px !important;
+}
+
+[class*="how"] {
+  display: block !important;
+  padding-top: 76px !important;
+  padding-bottom: 76px !important;
+}
+
+[class*="steps"] {
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  gap: 0 !important;
+  margin-top: 38px !important;
+}
+
+[class*="steps"] > div {
+  display: grid !important;
+  grid-template-columns: 72px minmax(0, 1fr) !important;
+  column-gap: 24px !important;
+  align-items: start !important;
+  padding: 26px 0 !important;
+  border-right: 0 !important;
+  border-bottom: 1px solid rgba(0,0,0,.08) !important;
+}
+
+[class*="steps"] > div:last-child {
+  border-bottom: 0 !important;
+}
+
+[class*="steps"] > div > span {
+  grid-row: 1 / span 2;
+  padding-top: 4px;
+}
+
+[class*="steps"] > div > h3 {
+  margin-top: 0 !important;
+}
+
+[class*="steps"] > div > p {
+  margin-top: 8px !important;
+  max-width: 680px;
+}
+
+[class*="bundleSection"] {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 42px !important;
+  padding-top: 76px !important;
+  padding-bottom: 76px !important;
+}
+
+[class*="bundleSection"] [class*="bundleCards"] {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 16px !important;
+  max-width: 760px;
+}
+
+[class*="bundleCards"] article {
+  min-height: 250px;
+}
+
+[class*="rights"] {
+  display: grid !important;
+  grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr) !important;
+  gap: 52px !important;
+  padding-top: 70px !important;
+  padding-bottom: 70px !important;
+}
+
+[class*="rightsGrid"] {
+  grid-template-columns: 1fr !important;
+}
+
+[class*="rightsGrid"] div {
+  padding: 16px 0 !important;
+}
+
+[class*="creatorCta"] {
+  width: min(1120px, calc(100% - 64px));
+  max-width: 1120px;
+  margin-inline: auto;
+  padding: 76px 0 !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  gap: 28px !important;
+}
+
+[class*="creatorCta"] [class*="creatorCta"] {
+  width: auto;
+}
+
+@media (max-width: 800px) {
+  [class*="reactionExplorer"],
+  [class*="compare"],
+  [class*="how"],
+  [class*="bundleSection"],
+  [class*="rights"],
+  [class*="creatorCta"] {
+    width: min(100% - 40px, 1120px);
+  }
+
+  [class*="reactionGrid"],
+  [class*="bundleSection"] [class*="bundleCards"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  [class*="rights"] {
+    grid-template-columns: 1fr !important;
+    gap: 34px !important;
+  }
+
+  [class*="steps"] > div {
+    grid-template-columns: 52px minmax(0, 1fr) !important;
+    column-gap: 16px !important;
+  }
+}
