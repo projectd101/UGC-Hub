@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Archivo:wght@700;800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800&display=swap");
 
 .page { min-height: 100vh; background: #f7f8f6; color: #111614; }
 .auth { min-height: 100vh; display:flex; align-items:center; justify-content:center; padding:32px; box-sizing:border-box; }
@@ -10,7 +10,7 @@
 .videoLogo { position:absolute; z-index:3; top:18px; left:18px; display:inline-flex; align-items:center; gap:0; color:#fff; background:rgba(17,22,20,.78); border:1px solid rgba(255,255,255,.28); border-radius:10px; padding:5px 10px 5px 5px; font-size:18px; font-weight:800; letter-spacing:-.04em; text-decoration:none; backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); box-shadow:0 8px 22px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.2); }
 .videoLogo span { background:#fff; color:#111614; border-radius:6px; padding:4px 7px; margin-right:5px; }
 .videoLogo b { font-weight:800; }
-.videoTitle { position:absolute; z-index:3; left:18px; bottom:18px; width:min(300px,calc(100% - 36px)); margin:0; color:#000; font-family:"Archivo",Inter,system-ui,sans-serif; font-size:22px; line-height:1.04; font-weight:800; letter-spacing:-.035em; text-shadow:none; }
+.videoTitle { position:absolute; z-index:3; left:18px; bottom:18px; width:min(280px,calc(100% - 36px)); margin:0; color:#000; font-family:"Barlow Condensed",Arial Narrow,sans-serif; font-size:21px; line-height:.98; font-weight:800; letter-spacing:-.018em; text-shadow:none; }
 .cardBody { min-width:0; display:flex; flex-direction:column; justify-content:center; padding:34px; background:linear-gradient(180deg,#fff 0%,#fbfcfb 100%); }
 .continueLabel { margin:0 0 14px; font-family:inherit; font-size:14px; line-height:1.2; font-weight:800; letter-spacing:-.01em; text-transform:none; transform:none; }
 .choice { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
@@ -21,5 +21,5 @@
 .terms { display:flex; align-items:flex-start; gap:9px; margin-top:20px; color:#69736e; font-size:11px; line-height:1.45; cursor:pointer; }
 .terms input { width:15px; height:15px; margin:1px 0 0; accent-color:#111614; flex:0 0 auto; }
 .terms a { color:#111614; font-weight:700; text-decoration:underline; text-underline-offset:2px; }
-@media (max-width:760px) { .auth { padding:18px; } .authCard { grid-template-columns:1fr; border-radius:16px; } .videoFrame { aspect-ratio:16/9; } .videoLogo { top:18px; left:18px; font-size:18px; border-radius:10px; padding:5px 10px 5px 5px; } .videoLogo span { border-radius:6px; padding:4px 7px; } .videoTitle { left:18px; bottom:18px; width:min(260px,calc(100% - 36px)); font-size:18px; line-height:1.05; } .cardBody { padding:24px; } .continueLabel { font-size:14px; margin-bottom:14px; } .option { min-height:54px; font-size:14px; padding:13px 15px; } .terms { margin-top:20px; font-size:11px; gap:9px; } .terms input { width:15px; height:15px; } }
+@media (max-width:760px) { .auth { padding:18px; } .authCard { grid-template-columns:1fr; border-radius:16px; } .videoFrame { aspect-ratio:16/9; } .videoLogo { top:18px; left:18px; font-size:18px; border-radius:10px; padding:5px 10px 5px 5px; } .videoLogo span { border-radius:6px; padding:4px 7px; } .videoTitle { left:18px; bottom:18px; width:min(235px,calc(100% - 36px)); font-size:18px; line-height:.99; } .cardBody { padding:24px; } .continueLabel { font-size:14px; margin-bottom:14px; } .option { min-height:54px; font-size:14px; padding:13px 15px; } .terms { margin-top:20px; font-size:11px; gap:9px; } .terms input { width:15px; height:15px; } }
 @media (max-width:440px) { .choice { grid-template-columns:1fr; } }
