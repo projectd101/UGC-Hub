@@ -1,0 +1,56 @@
+/* Compact four-card marketplace layout. Deliberately scoped so existing card colours, ripple effects, and typography remain unchanged. */
+[class*="creatorGrid"] {
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 16px !important;
+  margin-top: 22px !important;
+  min-width: 0;
+}
+
+[class*="creatorCard"] {
+  min-width: 0;
+  overflow: hidden;
+}
+
+[class*="creatorPreview"] {
+  height: 270px !important;
+}
+
+[class*="creatorInfo"] {
+  padding: 14px !important;
+}
+
+[class*="creatorIdentity"] {
+  min-width: 0;
+}
+
+[class*="creatorIdentity"] h3 {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+[class*="tagRow"] {
+  margin-top: 9px !important;
+  gap: 5px !important;
+}
+
+[class*="cardBottom"] {
+  margin-top: 12px !important;
+  padding-top: 11px !important;
+}
+
+@media (max-width: 1100px) {
+  [class*="creatorGrid"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 640px) {
+  [class*="creatorGrid"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  [class*="creatorPreview"] {
+    height: 300px !important;
+  }
+}
