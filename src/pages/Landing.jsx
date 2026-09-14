@@ -34,9 +34,7 @@ function CreatorPreview({ creator }) {
         onEnded={hasMultipleVideos ? () => setVideoIndex((i) => (i + 1) % creator.videos.length) : undefined}
         aria-label={`${creator.name} reaction preview`}
       />
-      <div className={styles.previewReaction}>{creator.reactions[0]}</div>
       {hasMultipleVideos && <div className={styles.previewCount}>{videoIndex + 1} / {creator.videos.length}</div>}
-      <div className={styles.previewMuted}>MUTED</div>
     </div>
   );
 }
