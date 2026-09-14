@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Sora:wght@600;700&display=swap");
 
 .page {
   min-height: 100vh;
@@ -49,13 +49,13 @@
   right:18px;
   bottom:18px;
   margin:0;
-  color:#fff;
-  font-family:"Space Grotesk",Inter,system-ui,sans-serif;
-  font-size:clamp(24px,3.1vw,42px);
-  line-height:.98;
+  color:#000;
+  font-family:"Sora",Inter,system-ui,sans-serif;
+  font-size:clamp(19px,2.25vw,30px);
+  line-height:1.05;
   font-weight:700;
   letter-spacing:-.045em;
-  text-shadow:0 3px 18px rgba(0,0,0,.42);
+  text-shadow:none;
 }
 
 .cardBody { min-width:0; display:flex; flex-direction:column; justify-content:center; padding:34px; background:linear-gradient(180deg,#fff 0%,#fbfcfb 100%); }
@@ -95,7 +95,7 @@
   .videoFrame { aspect-ratio:16/9; }
   .videoLogo { top:18px; left:18px; font-size:18px; border-radius:10px; padding:5px 10px 5px 5px; }
   .videoLogo span { border-radius:6px; padding:4px 7px; }
-  .videoTitle { left:18px; right:18px; bottom:18px; font-size:clamp(24px,7vw,34px); }
+  .videoTitle { left:18px; right:18px; bottom:18px; font-size:clamp(19px,5.8vw,28px); }
   .cardBody { padding:24px; }
   .continueLabel { font-size:14px; margin-bottom:14px; }
   .option { min-height:54px; font-size:14px; padding:13px 15px; }
