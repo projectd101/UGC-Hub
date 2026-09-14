@@ -17,13 +17,14 @@ const FAQS = [
 function goToSignIn() { window.location.href = "/sign-in"; }
 
 const marketplaceTagStyle = {
-  backgroundColor: "rgba(35, 75, 115, 0.18)",
-  color: "rgba(255, 255, 255, 0.96)",
-  border: "1px solid rgba(145, 195, 225, 0.22)",
-  borderRadius: "7px",
-  boxShadow: "inset 0 1px 0 rgba(255,255,255,0.16), 0 1px 3px rgba(8,35,60,0.08)",
-  backdropFilter: "blur(8px) saturate(125%)",
-  WebkitBackdropFilter: "blur(8px) saturate(125%)",
+  position: "relative",
+  background: "linear-gradient(180deg, rgba(105, 155, 190, 0.16) 0%, rgba(24, 55, 78, 0.14) 48%, rgba(8, 29, 46, 0.20) 100%)",
+  color: "rgba(242, 249, 255, 0.96)",
+  border: "1px solid rgba(170, 215, 240, 0.22)",
+  borderRadius: "6px",
+  boxShadow: "inset 0 1px 0 rgba(255,255,255,0.34), inset 0 -1px 2px rgba(2,18,30,0.18), 0 1px 2px rgba(3,20,34,0.16)",
+  backdropFilter: "blur(10px) saturate(135%)",
+  WebkitBackdropFilter: "blur(10px) saturate(135%)",
 };
 
 function CreatorPreview({ creator }) {
