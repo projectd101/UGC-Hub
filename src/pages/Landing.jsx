@@ -16,17 +16,6 @@ const FAQS = [
 ];
 function goToSignIn() { window.location.href = "/sign-in"; }
 
-const marketplaceTagStyle = {
-  position: "relative",
-  background: "linear-gradient(180deg, rgba(105, 155, 190, 0.16) 0%, rgba(24, 55, 78, 0.14) 48%, rgba(8, 29, 46, 0.20) 100%)",
-  color: "rgba(242, 249, 255, 0.96)",
-  border: "1px solid rgba(170, 215, 240, 0.22)",
-  borderRadius: "6px",
-  boxShadow: "inset 0 1px 0 rgba(255,255,255,0.34), inset 0 -1px 2px rgba(2,18,30,0.18), 0 1px 2px rgba(3,20,34,0.16)",
-  backdropFilter: "blur(10px) saturate(135%)",
-  WebkitBackdropFilter: "blur(10px) saturate(135%)",
-};
-
 function CreatorPreview({ creator }) {
   const src = creator.videos[0];
   return (
@@ -51,7 +40,7 @@ export default function Landing() {
           <div className={styles.heroVisual}><div className={`${styles.videoTile} ${styles.tileOne}`}><video src="/videos/1.mp4" autoPlay muted loop playsInline preload="metadata" /></div><div className={`${styles.videoTile} ${styles.tileTwo}`}><video src="/videos/2.mp4" autoPlay muted loop playsInline preload="metadata" /></div><div className={`${styles.videoTile} ${styles.tileThree}`}><video src="/videos/3.mp4" autoPlay muted loop playsInline preload="metadata" /></div></div>
         </section>
         <section id="marketplace" className={styles.marketplace}><div className={styles.sectionTop}><div><span className={styles.sectionKicker}>Marketplace</span><h2 className={styles.sectionHeadline}>Find the face your brand needs.</h2><p className={styles.sectionSub}>Every creator has a defined reaction library, niches, and video count.</p></div><button className={styles.textBtn} onClick={goToSignIn}>View all creators →</button></div>
-          <div className={styles.creatorGrid}>{CREATORS.map((creator) => <article key={creator.id} className={styles.creatorCard}><CreatorPreview creator={creator} /><div className={styles.creatorInfo}><div className={styles.creatorIdentity}><span>{creator.handle}</span></div><div className={styles.tagRow}>{creator.reactions.map((r) => <span key={r} className="marketplaceTag" style={marketplaceTagStyle}>{r}</span>)}</div><div className={styles.tagRow}>{creator.niches.map((n) => <span key={n} className="marketplaceTag" style={marketplaceTagStyle}>{n}</span>)}</div><div className={styles.cardBottom}><div><strong>{creator.clips}+</strong><span> videos</span></div><button onClick={goToSignIn}>View creator</button></div></div></article>)}</div>
+          <div className={styles.creatorGrid}>{CREATORS.map((creator) => <article key={creator.id} className={styles.creatorCard}><CreatorPreview creator={creator} /><div className={styles.creatorInfo}><div className={styles.creatorIdentity}><span>{creator.handle}</span></div><div className={styles.tagRow}>{creator.reactions.map((r) => <span key={r} className={styles.tag}>{r}</span>)}</div><div className={styles.tagRow}>{creator.niches.map((n) => <span key={n} className={styles.nicheTag}>{n}</span>)}</div><div className={styles.cardBottom}><div><strong>{creator.clips}+</strong><span> videos</span></div><button onClick={goToSignIn}>View creator</button></div></div></article>)}</div>
         </section>
         <section className={styles.reactionExplorer}><div className={styles.explorerCopy}><span className={styles.sectionKicker}>Reaction library</span><h2 className={styles.sectionHeadline}>One creator. Dozens of emotions.</h2><p className={styles.sectionSub}>Stop searching for a new person every time you need a different reaction. Build a complete bank around a face that fits your product.</p></div><div className={styles.reactionGrid}>{REACTIONS.map((reaction, i) => <button key={reaction} className={styles.reactionItem} onClick={goToSignIn}><span className={styles.reactionNumber}>0{i + 1}</span><strong>{reaction}</strong><span>View clips →</span></button>)}</div></section>
         <section className={styles.compare}><div className={styles.compareCol}><span className={styles.sectionKicker}>The old way</span><h2>Different face every time.</h2><ul><li>Search for creators for every campaign</li><li>Inconsistent look and audience recognition</li><li>Generic stock UGC gets reused everywhere</li><li>Hard to build a recognizable content identity</li></ul></div><div className={styles.compareColAccent}><span className={styles.sectionKicker}>UGC Hub</span><h2>One face. A whole reaction bank.</h2><ul><li>Choose a creator once</li><li>Buy 50 or 100 clips in one bundle</li><li>Multiple emotions from the same person</li><li>Keep your brand's UGC visually consistent</li></ul></div></section>
