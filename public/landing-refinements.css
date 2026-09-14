@@ -12,6 +12,7 @@
 .landingHeroHeadline em {
   font-family: inherit !important;
   font-weight: 700 !important;
+  color: #111827 !important;
 }
 
 /* Make the hero "Become a creator" button match the white/silver Sign in button. */
