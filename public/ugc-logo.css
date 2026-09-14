@@ -15,6 +15,13 @@
   flex: 0 0 auto;
 }
 
+.ugcBrandMark__ugc,
+.ugcBrandMark__hub {
+  font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-style: normal;
+  line-height: 1;
+}
+
 .ugcBrandMark__ugc {
   width: 57px;
   height: 25px;
@@ -23,22 +30,18 @@
   border-radius: 6px;
   background: #fff;
   color: #050505;
-  font-family: var(--font-display);
   font-size: 16px;
   font-weight: 800;
   letter-spacing: -0.075em;
-  line-height: 1;
   padding-right: 1px;
 }
 
 .ugcBrandMark__hub {
   margin-top: -1px;
   color: #fff;
-  font-family: var(--font-body);
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 500;
   letter-spacing: -0.045em;
-  line-height: 1;
 }
 
 @media (max-width: 700px) {
@@ -54,6 +57,6 @@
   }
 
   .ugcBrandMark__hub {
-    font-size: 16px;
+    font-size: 15px;
   }
 }
