@@ -14,13 +14,13 @@
 }
 
 .authInner {
-  width: min(1125px, 100%);
+  width: min(900px, 100%);
 }
 
 .authCard {
   width: 100%;
   display: grid;
-  grid-template-columns: 16fr 9fr;
+  grid-template-columns: minmax(0, 1.78fr) minmax(330px, 1fr);
   overflow: hidden;
   border: 1px solid #d9dfdb;
   border-radius: 22px;
@@ -29,7 +29,7 @@
 }
 
 .videoFrame {
-  width: 100%;
+  min-width: 0;
   aspect-ratio: 16 / 9;
   position: relative;
   overflow: hidden;
@@ -44,14 +44,40 @@
   object-fit: cover;
 }
 
+.videoFrame::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(10,18,14,.03), transparent 55%, rgba(10,18,14,.24));
+  pointer-events: none;
+}
+
+.videoBadge {
+  position: absolute;
+  z-index: 2;
+  left: 18px;
+  bottom: 18px;
+  padding: 8px 11px;
+  border: 1px solid rgba(255,255,255,.38);
+  border-radius: 10px;
+  background: rgba(12,18,15,.52);
+  color: #fff;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .11em;
+  text-transform: uppercase;
+  box-shadow: 0 8px 24px rgba(0,0,0,.16), inset 0 1px 0 rgba(255,255,255,.2);
+}
+
 .cardBody {
   min-width: 0;
-  aspect-ratio: 1 / 1;
-  box-sizing: border-box;
-  padding: 34px 30px 28px;
   display: flex;
   flex-direction: column;
   justify-content: center;
+  padding: 34px;
+  background: linear-gradient(180deg, #fff 0%, #fbfcfb 100%);
 }
 
 .logo {
@@ -59,15 +85,16 @@
   display: inline-flex;
   align-items: center;
   gap: 0;
-  margin-bottom: 34px;
+  margin-bottom: 30px;
   color: #fff;
   background: #111614;
-  border-radius: 9px;
+  border-radius: 10px;
   padding: 5px 10px 5px 5px;
   font-size: 18px;
   font-weight: 800;
   letter-spacing: -.04em;
   text-decoration: none;
+  box-shadow: 0 4px 0 #d7dbd8, 0 10px 20px rgba(17,22,20,.08);
 }
 
 .logo span {
@@ -82,48 +109,65 @@
 
 .continueLabel {
   margin: 0 0 14px;
-  font-size: 16px;
-  font-weight: 750;
-  letter-spacing: -.015em;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: -.01em;
 }
 
 .choice {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 9px;
+  gap: 10px;
 }
 
 .option {
+  position: relative;
   min-width: 0;
-  min-height: 46px;
-  border: 1px solid #cfd7d2;
-  border-radius: 10px;
-  padding: 11px 10px;
-  background: #fff;
+  min-height: 54px;
+  border: 1px solid #bfc9c3;
+  border-radius: 13px;
+  padding: 13px 15px;
+  background: linear-gradient(180deg, #ffffff 0%, #eef2ef 100%);
   color: #111614;
   font: inherit;
   font-size: 14px;
-  font-weight: 750;
+  font-weight: 800;
+  letter-spacing: -.015em;
   cursor: pointer;
-  transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease, background .16s ease;
+  overflow: hidden;
+  box-shadow: 0 3px 0 #c1c9c4, 0 7px 14px rgba(17,22,20,.07), inset 0 1px 0 #fff;
+  transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease, filter .16s ease;
+}
+
+.option::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.95), transparent);
 }
 
 .option:hover {
-  transform: translateY(-1px);
-  border-color: #9ca9a2;
-  background: #fbfcfb;
-  box-shadow: 0 8px 20px rgba(17,22,20,.07);
+  transform: translateY(-2px);
+  border-color: #8e9c94;
+  filter: brightness(1.025);
+  box-shadow: 0 5px 0 #b3bdb7, 0 12px 22px rgba(17,22,20,.11), inset 0 1px 0 #fff;
 }
 
-.option:active { transform: translateY(0); }
+.option:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 #b3bdb7, 0 4px 9px rgba(17,22,20,.07), inset 0 2px 4px rgba(17,22,20,.08);
+}
 
 .terms {
   display: flex;
   align-items: flex-start;
-  gap: 8px;
+  gap: 9px;
   margin-top: 20px;
   color: #69736e;
-  font-size: 10.5px;
+  font-size: 11px;
   line-height: 1.45;
   cursor: pointer;
 }
@@ -145,17 +189,11 @@
 
 @media (max-width: 760px) {
   .auth { padding: 18px; }
-  .authCard {
-    grid-template-columns: 1fr;
-    border-radius: 16px;
-  }
-  .cardBody {
-    aspect-ratio: auto;
-    padding: 24px 20px 22px;
-  }
-  .logo { margin-bottom: 26px; }
+  .authCard { grid-template-columns: 1fr; border-radius: 16px; }
+  .videoFrame { aspect-ratio: 16 / 9; }
+  .cardBody { padding: 24px; }
 }
 
-@media (max-width: 420px) {
+@media (max-width: 440px) {
   .choice { grid-template-columns: 1fr; }
 }
