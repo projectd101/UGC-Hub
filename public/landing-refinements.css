@@ -35,19 +35,19 @@
   box-shadow: inset 0 2px 4px rgba(0,0,0,.26),0 1px 0 #8b9097,0 4px 10px rgba(0,0,0,.08) !important;
 }
 
-/* Give the hero actions more breathing room below the supporting copy. */
+/* Strong, unmistakable separation between the supporting copy and the CTAs. */
 .heroCtas {
-  margin-top: 40px !important;
+  margin-top: 56px !important;
 }
 
-/* The proof line sits farther below the buttons and reads as stronger supporting information. */
+/* The proof line is intentionally larger, heavier, and lower than before. */
 .heroProof {
-  margin-top: 34px !important;
-  font-size: 13px !important;
-  line-height: 1.4 !important;
-  font-weight: 650 !important;
-  letter-spacing: 0.01em !important;
-  color: #68756f !important;
+  margin-top: 44px !important;
+  font-size: 16px !important;
+  line-height: 1.45 !important;
+  font-weight: 700 !important;
+  letter-spacing: 0 !important;
+  color: #5f6d67 !important;
 }
 
 @media (max-width: 900px) {
@@ -56,11 +56,11 @@
   }
 
   .heroCtas {
-    margin-top: 34px !important;
+    margin-top: 42px !important;
   }
 
   .heroProof {
-    margin-top: 28px !important;
-    font-size: 12px !important;
+    margin-top: 34px !important;
+    font-size: 14px !important;
   }
 }
