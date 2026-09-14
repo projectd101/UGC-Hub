@@ -1,0 +1,96 @@
+.wrap {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  gap: 48px;
+}
+
+.logo {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 22px;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  max-width: 720px;
+  width: 100%;
+}
+
+.card {
+  text-align: left;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+}
+
+.card.founder:hover {
+  border-color: var(--coral);
+}
+
+.card.creator:hover {
+  border-color: var(--violet);
+}
+
+.tag {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.founder .tag {
+  color: var(--coral);
+}
+
+.creator .tag {
+  color: var(--violet);
+}
+
+.card h2 {
+  font-size: 22px;
+  font-weight: 700;
+  margin-top: 4px;
+}
+
+.card p {
+  color: var(--ink-dim);
+  font-size: 14.5px;
+  line-height: 1.55;
+  margin-top: 4px;
+}
+
+.google {
+  margin-top: 18px;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 10px 16px;
+  border-radius: 9px;
+  background: var(--surface-2);
+  align-self: flex-start;
+}
+
+.fine {
+  color: var(--ink-dim);
+  font-size: 13px;
+  max-width: 480px;
+  text-align: center;
+}
+
+@media (max-width: 640px) {
+  .cards {
+    grid-template-columns: 1fr;
+  }
+}
