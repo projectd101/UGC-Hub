@@ -50,6 +50,34 @@
   color: #5f6d67 !important;
 }
 
+/* Keep the entire first-screen hero within the viewport. The proof line sits above the CTAs so the buttons are the final element at the bottom of the hero, with a small breathing room below them. */
+@media (min-width: 901px) {
+  .hero {
+    min-height: calc(100svh - 70px) !important;
+    box-sizing: border-box !important;
+    padding-top: 64px !important;
+    padding-bottom: 28px !important;
+  }
+
+  .heroCopy {
+    min-height: calc(100svh - 162px) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-start !important;
+  }
+
+  .heroProof {
+    order: 4 !important;
+    margin-top: 28px !important;
+  }
+
+  .heroCtas {
+    order: 5 !important;
+    margin-top: 18px !important;
+    margin-bottom: 0 !important;
+  }
+}
+
 @media (max-width: 900px) {
   .landingHeroHeadline {
     font-size: clamp(48px, 8vw, 66px) !important;
