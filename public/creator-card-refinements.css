@@ -1,38 +1,54 @@
 /* Creator marketplace — colourful editorial creator cards */
 .creatorGrid{grid-template-columns:repeat(3,minmax(0,1fr));gap:24px;margin-top:30px}
-.creatorCard{position:relative;overflow:hidden;border:0;border-radius:28px;background:#1b1b1b;min-height:0;box-shadow:0 18px 45px rgba(20,20,20,.12);transition:transform .35s cubic-bezier(.2,.8,.2,1),box-shadow .35s ease}
-.creatorCard:hover{transform:translateY(-7px) rotate(-.25deg);box-shadow:0 28px 65px rgba(20,20,20,.18)}
+.creatorCard{position:relative;overflow:hidden;border:0;border-radius:28px;background:#171918;min-height:0;box-shadow:0 18px 45px rgba(20,20,20,.12);transition:transform .35s cubic-bezier(.2,.8,.2,1),box-shadow .35s ease}
+.creatorCard:hover{transform:translateY(-7px);box-shadow:0 28px 65px rgba(20,20,20,.18)}
 .creatorPreview{height:360px;border-radius:0;background:#ddd;position:relative;overflow:hidden}
 .creatorPreview:before{content:"";position:absolute;inset:0;z-index:1;background:linear-gradient(180deg,rgba(10,10,10,.02) 35%,rgba(10,10,10,.12) 100%);pointer-events:none}
 .previewVideo{transform:scale(1.01);transition:transform .8s cubic-bezier(.2,.8,.2,1),filter .5s ease}
 .creatorCard:hover .previewVideo{transform:scale(1.06);filter:saturate(1.08) contrast(1.02)}
 .previewCount{right:16px;top:16px;z-index:4;padding:7px 10px;border:1px solid rgba(255,255,255,.7);border-radius:999px;background:rgba(255,255,255,.82);backdrop-filter:blur(12px);color:#202020;font-size:10px;font-weight:750;box-shadow:0 6px 18px rgba(0,0,0,.1)}
 
-/* The data is a real colour panel now — not a white rectangular box. */
-.creatorInfo{position:relative;left:auto;right:auto;bottom:auto;z-index:5;margin:0;padding:22px 22px 21px;color:#17211f;background:#d9f1e5 !important;box-shadow:none;border:0;backdrop-filter:none}
-.creatorIdentity{gap:12px;align-items:center}
-.avatar{width:46px;height:46px;flex:0 0 46px;border:2px solid rgba(255,255,255,.78);background:#17211f;color:#fff;box-shadow:0 7px 18px rgba(23,33,31,.16);font-size:10px;letter-spacing:.03em}
-.creatorIdentity h3{font-size:19px;line-height:1.1;letter-spacing:-.03em;color:#17211f}
-.creatorIdentity span{display:block;margin-top:4px;font-size:11px;color:rgba(23,33,31,.62)}
-.tagRow{gap:7px;margin-top:16px;position:relative;z-index:6;flex-wrap:wrap}
-.tag,.nicheTag{padding:7px 10px;border-radius:999px;font-size:9px;font-weight:700;line-height:1;border:1px solid rgba(23,33,31,.12);background:rgba(255,255,255,.52);color:#25322f;backdrop-filter:blur(8px)}
-.nicheTag{background:rgba(255,255,255,.28);color:rgba(23,33,31,.72);border-color:rgba(23,33,31,.1)}
-.cardBottom{margin-top:20px;padding-top:16px;gap:0;border-top:1px solid rgba(23,33,31,.14);align-items:center;color:rgba(23,33,31,.62)}
-.cardBottom div:first-child,.cardBottom div:nth-child(2){display:flex;align-items:baseline;gap:3px}
-.cardBottom div:nth-child(2){margin-left:18px}
-.cardBottom strong{font-size:21px;letter-spacing:-.045em;color:#17211f}
-.cardBottom span{font-size:10px;color:rgba(23,33,31,.58)}
-.cardBottom button{margin-left:auto;padding:11px 16px;border:0;border-radius:999px;background:#17211f;color:#fff;font-size:10px;font-weight:800;box-shadow:0 5px 0 rgba(23,33,31,.16);cursor:pointer;transition:transform .2s ease,box-shadow .2s ease,background .2s ease}
+/* Bottom data panel: integrated colour field, asymmetric editorial layout. */
+.creatorInfo{position:relative;isolation:isolate;display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"identity stats" "reactions reactions" "niches niches" "action action";gap:14px 18px;left:auto;right:auto;bottom:auto;margin:0;padding:22px;color:#17211f;background:linear-gradient(135deg,#d9f1e5,#a9dec9) !important;box-shadow:none;border:0;backdrop-filter:none;overflow:hidden}
+.creatorInfo:before,.creatorInfo:after{content:"";position:absolute;inset:-35%;z-index:-1;pointer-events:none;border-radius:50%;transform:translateX(-125%) rotate(-8deg);opacity:0;background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,.05) 35%,rgba(255,255,255,.48) 50%,rgba(255,255,255,.08) 65%,transparent 100%);filter:blur(10px);transition:opacity .2s ease}
+.creatorInfo:after{transform:translateX(-145%) rotate(-8deg);opacity:.35;background:linear-gradient(90deg,transparent,rgba(255,255,255,.16),transparent);filter:blur(18px)}
+.creatorCard:hover .creatorInfo:before{animation:creatorPanelRipple 1.15s cubic-bezier(.2,.7,.2,1) forwards;opacity:1}
+.creatorCard:hover .creatorInfo:after{animation:creatorPanelRipple 1.15s .12s cubic-bezier(.2,.7,.2,1) forwards;opacity:1}
+@keyframes creatorPanelRipple{0%{transform:translateX(-125%) rotate(-8deg);opacity:0}12%{opacity:1}55%{opacity:.9}100%{transform:translateX(125%) rotate(-8deg);opacity:0}}
+
+.creatorIdentity{grid-area:identity;gap:12px;align-items:center;min-width:0}
+.avatar{width:48px;height:48px;flex:0 0 48px;border:2px solid rgba(255,255,255,.82);background:#17211f;color:#fff;box-shadow:0 7px 18px rgba(23,33,31,.16);font-size:10px;letter-spacing:.03em}
+.creatorIdentity h3{font-size:20px;line-height:1.02;letter-spacing:-.035em;color:#17211f}
+.creatorIdentity span{display:block;margin-top:5px;font-size:11px;color:rgba(23,33,31,.62)}
+
+.cardBottom{grid-area:stats;margin:0;padding:0;border:0;display:grid;grid-template-columns:auto auto;gap:7px;align-items:center;align-self:center}
+.cardBottom div:first-child,.cardBottom div:nth-child(2){display:flex;flex-direction:column;align-items:flex-end;gap:0}
+.cardBottom div:nth-child(2){margin-left:0}
+.cardBottom strong{font-size:21px;line-height:1;letter-spacing:-.045em;color:#17211f}
+.cardBottom span{font-size:9px;line-height:1.2;color:rgba(23,33,31,.58)}
+.cardBottom button{grid-column:1 / -1;margin:7px 0 0;padding:10px 15px;border:0;border-radius:999px;background:#17211f;color:#fff;font-size:10px;font-weight:800;box-shadow:0 5px 0 rgba(23,33,31,.16);cursor:pointer;transition:transform .2s ease,box-shadow .2s ease,background .2s ease}
 .cardBottom button:hover{transform:translateY(-2px);background:#263b36;box-shadow:0 7px 0 rgba(23,33,31,.16)}
 .cardBottom button:active{transform:translateY(1px);box-shadow:0 2px 0 rgba(23,33,31,.16)}
 
-/* Each creator gets a distinct editorial colour identity. */
-.creatorCard:nth-child(1) .creatorInfo{background:linear-gradient(135deg,#d9f1e5 0%,#bfe5d7 100%) !important}
-.creatorCard:nth-child(2) .creatorInfo{background:linear-gradient(135deg,#ffe1c7 0%,#f7c7b1 100%) !important}
-.creatorCard:nth-child(3) .creatorInfo{background:linear-gradient(135deg,#ddd5ff 0%,#c8d8ff 100%) !important}
-.creatorCard:nth-child(1){background:#bfe5d7}
-.creatorCard:nth-child(2){background:#f7c7b1}
-.creatorCard:nth-child(3){background:#c8d8ff}
+.tagRow{position:relative;z-index:2;display:flex;gap:7px;margin:0;flex-wrap:wrap;min-width:0}
+.creatorInfo > .tagRow:nth-of-type(1){grid-area:reactions}
+.creatorInfo > .tagRow:nth-of-type(2){grid-area:niches}
+.tag,.nicheTag{padding:7px 10px;border-radius:9px;font-size:9px;font-weight:700;line-height:1;border:1px solid rgba(23,33,31,.11);background:rgba(255,255,255,.46);color:#25322f;backdrop-filter:blur(8px);transition:transform .2s ease,background .2s ease}
+.tag:hover,.nicheTag:hover{transform:translateY(-1px);background:rgba(255,255,255,.7)}
+.nicheTag{background:rgba(23,33,31,.08);color:rgba(23,33,31,.76);border-color:rgba(23,33,31,.09)}
+
+/* The CTA becomes its own full-width action strip instead of living beside the stats. */
+.cardBottom button{position:relative;overflow:hidden}
+.cardBottom button:after{content:"";position:absolute;top:-60%;bottom:-60%;left:-80%;width:38%;transform:skewX(-18deg);background:linear-gradient(90deg,transparent,rgba(255,255,255,.42),transparent);transition:left .65s ease}
+.cardBottom button:hover:after{left:145%}
+
+/* Distinct colour identities — no white information rectangle. */
+.creatorCard:nth-child(1) .creatorInfo{background:linear-gradient(135deg,#d8f3e6 0%,#9edbc7 48%,#7bc8b1 100%) !important}
+.creatorCard:nth-child(2) .creatorInfo{background:linear-gradient(135deg,#ffd9b8 0%,#f7a88e 48%,#ed7f88 100%) !important}
+.creatorCard:nth-child(3) .creatorInfo{background:linear-gradient(135deg,#ddd2ff 0%,#a9bfff 48%,#7f9ff5 100%) !important}
+.creatorCard:nth-child(1){background:#9edbc7}
+.creatorCard:nth-child(2){background:#f7a88e}
+.creatorCard:nth-child(3){background:#a9bfff}
 
 @media (max-width:1050px){.creatorGrid{grid-template-columns:1fr 1fr}.creatorPreview{height:360px}}
 @media (max-width:700px){.creatorGrid{grid-template-columns:1fr;gap:20px}.creatorPreview{height:390px}}
