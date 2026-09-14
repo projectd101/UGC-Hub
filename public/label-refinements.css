@@ -1,0 +1,31 @@
+@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500&display=swap");
+
+/* Quiet metadata / label system: light, lowercase-friendly, and no harsh red. */
+[class*="eyebrow"],
+[class*="sectionKicker"],
+[class*="reactionNumber"],
+[class*="steps"] > div > span,
+[class*="compare"] li::before {
+  font-family: "Manrope", Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+  font-weight: 300 !important;
+  color: #68756f !important;
+  letter-spacing: 0.035em !important;
+}
+
+[class*="eyebrow"],
+[class*="sectionKicker"] {
+  font-size: 11px !important;
+  line-height: 1.35 !important;
+}
+
+[class*="reactionNumber"],
+[class*="steps"] > div > span {
+  font-size: 10px !important;
+}
+
+[class*="heroProof"] {
+  font-family: "Manrope", Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+  font-weight: 300 !important;
+  letter-spacing: 0.025em !important;
+  color: #7b827f !important;
+}
