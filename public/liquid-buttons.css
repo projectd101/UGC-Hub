@@ -1,21 +1,91 @@
-/* Refined 3D liquid / chrome buttons. No animated specular spots. */
-[class*="primaryBtn"],[class*="secondaryBtn"],[class*="ghostBtn"]{position:relative!important;isolation:isolate!important;overflow:hidden!important;border-radius:999px!important;border:1px solid transparent!important;transform:translateZ(0)!important;transition:transform .22s cubic-bezier(.2,.8,.2,1),box-shadow .22s cubic-bezier(.2,.8,.2,1),filter .22s ease!important;-webkit-tap-highlight-color:transparent!important}
-[class*="primaryBtn"]{color:#fff!important;background:linear-gradient(180deg,#3a3d43 0%,#181a1e 10%,#08090b 38%,#050608 64%,#171a1f 90%,#32363d 100%) padding-box,linear-gradient(180deg,#f5f7fa 0%,#9da3ac 8%,#343941 19%,#08090b 34%,#4e555e 76%,#c8cdd4 93%,#fff 100%) border-box!important;box-shadow:inset 0 1px 1px rgba(255,255,255,.72),inset 0 2px 5px rgba(255,255,255,.10),inset 0 -2px 4px rgba(0,0,0,.92),inset 0 -1px 1px rgba(255,255,255,.22),0 2px 0 rgba(27,29,33,.95),0 8px 20px rgba(0,0,0,.17)!important}
-[class*="primaryBtn"]:hover{transform:translateY(-2px) scale(1.012)!important;filter:brightness(1.06)!important;box-shadow:inset 0 1px 1px rgba(255,255,255,.86),inset 0 3px 6px rgba(255,255,255,.12),inset 0 -3px 5px rgba(0,0,0,.94),0 3px 0 rgba(27,29,33,.95),0 13px 28px rgba(0,0,0,.19)!important}
-[class*="primaryBtn"]:active{transform:translateY(1px) scale(.985)!important;box-shadow:inset 0 2px 4px rgba(0,0,0,.82),inset 0 -1px 1px rgba(255,255,255,.22),0 1px 0 rgba(27,29,33,.95),0 4px 10px rgba(0,0,0,.13)!important}
-[class*="secondaryBtn"]{color:#fff!important;background:linear-gradient(180deg,#8c84ff 0%,#5148d9 11%,#15152a 39%,#070812 61%,#17162d 83%,#5148d9 96%,#8d86ff 100%) padding-box,linear-gradient(180deg,#b9b4ff 0%,#7169ef 9%,#2d2b62 20%,#080914 38%,#514ce0 76%,#8d86ff 92%,#c5c1ff 100%) border-box!important;box-shadow:inset 0 1px 1px rgba(255,255,255,.62),inset 0 2px 5px rgba(126,116,255,.22),inset 0 -3px 5px rgba(0,0,0,.78),inset 0 -1px 1px rgba(150,143,255,.30),0 2px 0 #302b78,0 8px 20px rgba(62,55,170,.16)!important}
-[class*="secondaryBtn"]:hover{transform:translateY(-2px) scale(1.012)!important;filter:brightness(1.08)!important;box-shadow:inset 0 1px 1px rgba(255,255,255,.70),inset 0 3px 6px rgba(126,116,255,.26),inset 0 -3px 5px rgba(0,0,0,.82),0 3px 0 #302b78,0 13px 28px rgba(62,55,170,.21)!important}
-[class*="secondaryBtn"]:active{transform:translateY(1px) scale(.985)!important;box-shadow:inset 0 2px 4px rgba(0,0,0,.72),inset 0 -1px 1px rgba(150,143,255,.28),0 1px 0 #302b78,0 4px 10px rgba(62,55,170,.12)!important}
-[class*="ghostBtn"]{color:#202226!important;background:linear-gradient(180deg,#fff 0%,#e1e3e7 15%,#9da2aa 43%,#f5f6f7 68%,#b0b5bc 88%,#fdfdfd 100%) padding-box,linear-gradient(180deg,#fff 0%,#777d85 24%,#f7f8f9 48%,#686e76 74%,#fff 100%) border-box!important;box-shadow:inset 0 1px 1px #fff,inset 0 2px 4px rgba(255,255,255,.34),inset 0 -3px 5px rgba(0,0,0,.22),0 2px 0 #92979e,0 7px 17px rgba(0,0,0,.09)!important}
-[class*="ghostBtn"]:hover{color:#101114!important;transform:translateY(-2px) scale(1.01)!important;filter:brightness(1.04)!important;box-shadow:inset 0 1px 1px #fff,inset 0 3px 5px rgba(255,255,255,.40),inset 0 -3px 5px rgba(0,0,0,.25),0 3px 0 #8b9097,0 10px 20px rgba(0,0,0,.11)!important}
-[class*="ghostBtn"]:active{transform:translateY(1px) scale(.985)!important;box-shadow:inset 0 2px 4px rgba(0,0,0,.26),0 1px 0 #8b9097,0 4px 10px rgba(0,0,0,.08)!important}
+/* Tactile 3D buttons: sculpted, glossy, and physical rather than flat chrome. */
+[class*="primaryBtn"],[class*="secondaryBtn"],[class*="ghostBtn"]{
+  position:relative!important;
+  isolation:isolate!important;
+  overflow:hidden!important;
+  border-radius:16px!important;
+  border:1px solid transparent!important;
+  transform:translateZ(0)!important;
+  transition:transform .22s cubic-bezier(.2,.8,.2,1),box-shadow .22s cubic-bezier(.2,.8,.2,1),filter .22s ease!important;
+  -webkit-tap-highlight-color:transparent!important;
+  font-weight:700!important;
+}
 
-/* Kill the legacy decorative pseudo-elements from Landing.module.css. They were the source of the white moving spots / extra button layers. */
-[class*="primaryBtn"]::before,
-[class*="primaryBtn"]::after,
-[class*="secondaryBtn"]::before,
-[class*="secondaryBtn"]::after,
-[class*="ghostBtn"]::before,
-[class*="ghostBtn"]::after{content:none!important;display:none!important}
+/* Primary — deep ink with an inflated, polished surface. */
+[class*="primaryBtn"]{
+  color:#fff!important;
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.20) 0%,rgba(255,255,255,.06) 14%,transparent 31%),
+    linear-gradient(180deg,#303640 0%,#171c25 32%,#0b1018 58%,#151c27 82%,#252d38 100%) padding-box,
+    linear-gradient(180deg,#697483 0%,#303946 18%,#090d14 43%,#697482 82%,#c0c7ce 100%) border-box!important;
+  box-shadow:
+    inset 0 2px 0 rgba(255,255,255,.52),
+    inset 0 1px 5px rgba(255,255,255,.10),
+    inset 0 -5px 7px rgba(0,0,0,.48),
+    0 3px 0 #070a0f,
+    0 7px 0 rgba(17,22,30,.20),
+    0 14px 28px rgba(11,16,24,.18)!important;
+}
+
+/* Secondary — signature warm coral/orange accent. */
+[class*="secondaryBtn"]{
+  color:#fff!important;
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.34) 0%,rgba(255,255,255,.10) 17%,transparent 35%),
+    linear-gradient(180deg,#ff7654 0%,#f04a2d 30%,#d9361d 62%,#e84729 84%,#ff6748 100%) padding-box,
+    linear-gradient(180deg,#ffb09a 0%,#ff694c 18%,#c52f1b 48%,#8f2417 78%,#ff9075 100%) border-box!important;
+  box-shadow:
+    inset 0 2px 0 rgba(255,255,255,.72),
+    inset 0 2px 6px rgba(255,255,255,.15),
+    inset 0 -5px 7px rgba(105,25,12,.28),
+    0 3px 0 #9f2b1a,
+    0 7px 0 rgba(120,34,20,.14),
+    0 14px 28px rgba(217,54,29,.20)!important;
+}
+
+/* Ghost — soft porcelain instead of generic metallic silver. */
+[class*="ghostBtn"]{
+  color:#1d232b!important;
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.96) 0%,rgba(255,255,255,.40) 19%,transparent 38%),
+    linear-gradient(180deg,#fffdf9 0%,#eee9e2 45%,#d7d1c8 76%,#f7f4ee 100%) padding-box,
+    linear-gradient(180deg,#fff 0%,#c7c0b6 34%,#a29a90 64%,#fff 100%) border-box!important;
+  box-shadow:
+    inset 0 2px 0 #fff,
+    inset 0 2px 5px rgba(255,255,255,.75),
+    inset 0 -5px 7px rgba(74,67,58,.16),
+    0 3px 0 #aaa39a,
+    0 7px 0 rgba(70,63,55,.10),
+    0 14px 25px rgba(60,54,48,.12)!important;
+}
+
+[class*="primaryBtn"]:hover,[class*="secondaryBtn"]:hover,[class*="ghostBtn"]:hover{
+  transform:translateY(-3px) scale(1.018)!important;
+}
+
+[class*="primaryBtn"]:hover{
+  filter:brightness(1.08)!important;
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.62),inset 0 2px 6px rgba(255,255,255,.12),inset 0 -6px 8px rgba(0,0,0,.52),0 4px 0 #070a0f,0 8px 0 rgba(17,22,30,.20),0 17px 32px rgba(11,16,24,.22)!important;
+}
+[class*="secondaryBtn"]:hover{
+  filter:saturate(1.08) brightness(1.05)!important;
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.80),inset 0 2px 6px rgba(255,255,255,.18),inset 0 -6px 8px rgba(105,25,12,.32),0 4px 0 #9f2b1a,0 8px 0 rgba(120,34,20,.16),0 17px 32px rgba(217,54,29,.24)!important;
+}
+[class*="ghostBtn"]:hover{
+  filter:brightness(1.025)!important;
+  box-shadow:inset 0 2px 0 #fff,inset 0 2px 6px rgba(255,255,255,.82),inset 0 -6px 8px rgba(74,67,58,.18),0 4px 0 #aaa39a,0 8px 0 rgba(70,63,55,.11),0 17px 30px rgba(60,54,48,.15)!important;
+}
+
+[class*="primaryBtn"]:active,[class*="secondaryBtn"]:active,[class*="ghostBtn"]:active{
+  transform:translateY(2px) scale(.985)!important;
+}
+[class*="primaryBtn"]:active{box-shadow:inset 0 4px 7px rgba(0,0,0,.55),0 1px 0 #070a0f,0 4px 9px rgba(11,16,24,.14)!important}
+[class*="secondaryBtn"]:active{box-shadow:inset 0 4px 7px rgba(105,25,12,.34),0 1px 0 #9f2b1a,0 4px 9px rgba(217,54,29,.14)!important}
+[class*="ghostBtn"]:active{box-shadow:inset 0 4px 7px rgba(74,67,58,.20),0 1px 0 #aaa39a,0 4px 9px rgba(60,54,48,.09)!important}
+
+/* Remove the legacy decorative layers that previously produced moving white spots. */
+[class*="primaryBtn"]::before,[class*="primaryBtn"]::after,
+[class*="secondaryBtn"]::before,[class*="secondaryBtn"]::after,
+[class*="ghostBtn"]::before,[class*="ghostBtn"]::after{content:none!important;display:none!important}
 
 @media (prefers-reduced-motion:reduce){[class*="primaryBtn"],[class*="secondaryBtn"],[class*="ghostBtn"]{transition:none!important}}
