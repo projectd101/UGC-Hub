@@ -1,0 +1,167 @@
+/* Chrome / liquid-glass button experiment. Scoped to the generated CSS-module class names. */
+
+@keyframes ugcChromeOrbit {
+  0% { transform: translateX(-170%) skewX(-18deg); opacity: 0; }
+  12% { opacity: .9; }
+  42% { opacity: .55; }
+  55%, 100% { transform: translateX(390%) skewX(-18deg); opacity: 0; }
+}
+
+@keyframes ugcChromeGlow {
+  0%, 100% { filter: brightness(.96); }
+  50% { filter: brightness(1.08); }
+}
+
+[class*="primaryBtn"],
+[class*="secondaryBtn"],
+[class*="ghostBtn"] {
+  position: relative !important;
+  isolation: isolate !important;
+  overflow: hidden !important;
+  border-radius: 999px !important;
+  border: 2px solid transparent !important;
+  transform-style: preserve-3d !important;
+  transition: transform .28s cubic-bezier(.2,.8,.2,1), box-shadow .28s cubic-bezier(.2,.8,.2,1), filter .28s ease !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+/* Dark liquid-chrome shell — closest to the supplied reference. */
+[class*="primaryBtn"] {
+  color: #fff !important;
+  background:
+    radial-gradient(125% 95% at 50% 0%, rgba(255,255,255,.13), transparent 38%),
+    radial-gradient(95% 120% at 50% 100%, rgba(255,255,255,.07), transparent 42%),
+    linear-gradient(180deg, #17191d 0%, #090a0c 42%, #101216 68%, #050607 100%) padding-box,
+    linear-gradient(180deg, #ffffff 0%, #d9dce1 7%, #747980 15%, #17191d 29%, #555a62 47%, #f4f5f7 66%, #9ca1a8 82%, #ffffff 100%) border-box !important;
+  box-shadow:
+    inset 0 1px 1px rgba(255,255,255,.95),
+    inset 0 3px 7px rgba(255,255,255,.12),
+    inset 0 -5px 10px rgba(0,0,0,.78),
+    inset 0 -1px 1px rgba(255,255,255,.5),
+    0 3px 0 rgba(34,36,40,.95),
+    0 10px 24px rgba(0,0,0,.16),
+    0 0 30px rgba(255,255,255,.10) !important;
+  animation: ugcChromeGlow 4.8s ease-in-out infinite !important;
+}
+
+/* Inner curved glass/bezel highlight. */
+[class*="primaryBtn"]::before,
+[class*="secondaryBtn"]::before,
+[class*="ghostBtn"]::before {
+  content: "" !important;
+  position: absolute !important;
+  inset: 3px !important;
+  border-radius: inherit !important;
+  pointer-events: none !important;
+  z-index: 0 !important;
+  border: 1px solid rgba(255,255,255,.55) !important;
+  box-shadow:
+    inset 0 1px 1px rgba(255,255,255,.82),
+    inset 0 -2px 4px rgba(0,0,0,.65) !important;
+  opacity: .82 !important;
+}
+
+/* Moving wet-lens specular beam. */
+[class*="primaryBtn"]::after,
+[class*="secondaryBtn"]::after,
+[class*="ghostBtn"]::after {
+  content: "" !important;
+  position: absolute !important;
+  top: -35% !important;
+  left: 0 !important;
+  width: 24% !important;
+  height: 170% !important;
+  border-radius: 999px !important;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.82), rgba(255,255,255,.22), transparent) !important;
+  filter: blur(2px) !important;
+  transform: translateX(-170%) skewX(-18deg) !important;
+  animation: ugcChromeOrbit 5.5s cubic-bezier(.22,.7,.25,1) infinite !important;
+  pointer-events: none !important;
+  z-index: 1 !important;
+  opacity: .72 !important;
+}
+
+[class*="primaryBtn"]:hover {
+  transform: translateY(-3px) scale(1.015) !important;
+  filter: brightness(1.08) !important;
+  box-shadow:
+    inset 0 1px 1px rgba(255,255,255,1),
+    inset 0 4px 8px rgba(255,255,255,.14),
+    inset 0 -6px 11px rgba(0,0,0,.8),
+    0 4px 0 rgba(34,36,40,.95),
+    0 16px 34px rgba(0,0,0,.19),
+    0 0 40px rgba(255,255,255,.17) !important;
+}
+
+[class*="primaryBtn"]:active {
+  transform: translateY(1px) scale(.975) !important;
+  box-shadow:
+    inset 0 3px 5px rgba(0,0,0,.72),
+    inset 0 -1px 1px rgba(255,255,255,.35),
+    0 1px 0 rgba(34,36,40,.95),
+    0 5px 13px rgba(0,0,0,.14) !important;
+}
+
+/* Silver liquid-glass version for secondary actions. */
+[class*="secondaryBtn"] {
+  color: #151619 !important;
+  background:
+    radial-gradient(100% 130% at 50% 0%, rgba(255,255,255,.98), transparent 42%),
+    linear-gradient(180deg, #f8f9fa 0%, #bfc3c9 36%, #737880 52%, #e9eaec 73%, #9da2a9 100%) padding-box,
+    linear-gradient(180deg, #ffffff 0%, #c6cad0 10%, #5d6269 23%, #f8f9fa 42%, #777c84 58%, #ffffff 73%, #8c9198 90%, #ffffff 100%) border-box !important;
+  box-shadow:
+    inset 0 1px 1px #fff,
+    inset 0 3px 7px rgba(255,255,255,.45),
+    inset 0 -5px 9px rgba(0,0,0,.25),
+    0 3px 0 #8a8f96,
+    0 9px 22px rgba(0,0,0,.10),
+    0 0 26px rgba(180,185,195,.18) !important;
+}
+
+[class*="secondaryBtn"]:hover {
+  transform: translateY(-3px) scale(1.015) !important;
+  filter: brightness(1.05) !important;
+  box-shadow:
+    inset 0 1px 1px #fff,
+    inset 0 4px 8px rgba(255,255,255,.58),
+    inset 0 -6px 10px rgba(0,0,0,.27),
+    0 4px 0 #858a91,
+    0 15px 32px rgba(0,0,0,.15),
+    0 0 34px rgba(185,190,200,.28) !important;
+}
+
+[class*="secondaryBtn"]:active {
+  transform: translateY(1px) scale(.975) !important;
+  box-shadow: inset 0 3px 5px rgba(0,0,0,.3), 0 1px 0 #858a91, 0 5px 12px rgba(0,0,0,.1) !important;
+}
+
+/* Small chrome pill for Sign in. */
+[class*="ghostBtn"] {
+  color: #202226 !important;
+  background:
+    linear-gradient(180deg, #ffffff 0%, #d6d8dc 25%, #8d9299 48%, #f6f7f8 70%, #a1a6ad 100%) padding-box,
+    linear-gradient(180deg, #ffffff, #777c83 24%, #f9f9fa 48%, #666b72 72%, #ffffff) border-box !important;
+  box-shadow:
+    inset 0 1px 1px #fff,
+    inset 0 -3px 6px rgba(0,0,0,.22),
+    0 2px 0 #a1a5ab,
+    0 6px 15px rgba(0,0,0,.08) !important;
+}
+
+[class*="ghostBtn"]:hover {
+  color: #08090a !important;
+  transform: translateY(-2px) scale(1.01) !important;
+  filter: brightness(1.04) !important;
+  box-shadow: inset 0 1px 1px #fff, inset 0 -3px 6px rgba(0,0,0,.22), 0 3px 0 #969ba2, 0 10px 20px rgba(0,0,0,.11), 0 0 22px rgba(170,175,185,.18) !important;
+}
+
+[class*="ghostBtn"]:active {
+  transform: translateY(1px) scale(.98) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [class*="primaryBtn"], [class*="primaryBtn"]::after,
+  [class*="secondaryBtn"]::after, [class*="ghostBtn"]::after {
+    animation: none !important;
+  }
+}
