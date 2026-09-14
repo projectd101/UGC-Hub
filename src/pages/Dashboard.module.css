@@ -1,5 +1,6 @@
 .wrap {
   min-height: 100vh;
+  background: #ffffff;
 }
 
 .header {
@@ -8,16 +9,18 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  background: #ffffff;
 }
 
 .logo {
   font-family: var(--font-display);
   font-weight: 800;
   font-size: 19px;
+  color: var(--ink);
 }
 
 .signOut {
-  background: none;
+  background: #ffffff;
   border: 1px solid var(--line);
   color: var(--ink-dim);
   border-radius: 9px;
@@ -28,19 +31,22 @@
 
 .signOut:hover {
   color: var(--ink);
-  border-color: var(--ink-dim);
+  border-color: #bdbdc2;
+  background: #fafafa;
 }
 
 .main {
   max-width: 1000px;
   margin: 0 auto;
   padding: 48px 32px 80px;
+  background: #ffffff;
 }
 
 .title {
   font-size: 30px;
   font-weight: 800;
   font-family: var(--font-display);
+  color: var(--ink);
 }
 
 .subtitle {
@@ -53,6 +59,7 @@
   font-size: 20px;
   font-weight: 700;
   margin: 44px 0 20px;
+  color: var(--ink);
 }
 
 .dim {
@@ -69,7 +76,7 @@
 }
 
 .activeBadge {
-  background: rgba(139, 127, 255, 0.15);
+  background: rgba(117, 104, 255, 0.1);
   color: var(--violet);
   font-size: 13px;
   font-weight: 700;
@@ -85,19 +92,21 @@
 
 .creatorCard,
 .requestCard {
-  background: var(--surface);
+  background: #ffffff;
   border: 1px solid var(--line);
   border-radius: 16px;
   padding: 22px;
   display: flex;
   flex-direction: column;
   gap: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
 }
 
 .creatorCard h3,
 .requestCard h3 {
   font-size: 17px;
   font-weight: 700;
+  color: var(--ink);
 }
 
 .bio {
@@ -113,7 +122,7 @@
 }
 
 .pill {
-  background: rgba(255, 77, 103, 0.12);
+  background: rgba(255, 77, 103, 0.09);
   color: var(--coral);
   font-size: 12px;
   font-weight: 600;
@@ -122,7 +131,7 @@
 }
 
 .pillViolet {
-  background: rgba(139, 127, 255, 0.12);
+  background: rgba(117, 104, 255, 0.09);
   color: var(--violet);
 }
 
@@ -136,12 +145,16 @@
 .unlockBtn {
   margin-top: 8px;
   background: var(--coral);
-  color: #14090c;
+  color: #ffffff;
   border: none;
   border-radius: 9px;
   padding: 10px 16px;
   font-size: 13.5px;
   font-weight: 700;
+}
+
+.unlockBtn:hover {
+  opacity: 0.92;
 }
 
 .unlockBtn:disabled {
@@ -150,8 +163,8 @@
 
 .unlockedBox {
   margin-top: 8px;
-  background: var(--surface-2);
-  border: 1px solid var(--violet);
+  background: #f7f7f8;
+  border: 1px solid rgba(117, 104, 255, 0.45);
   border-radius: 9px;
   padding: 10px 14px;
   display: flex;
