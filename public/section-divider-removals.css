@@ -23,7 +23,8 @@
 [class*="compareColAccent"] [class*="sectionKicker"],[class*="compareColAccent"] h2,[class*="compareColAccent"] li { color:#fff !important; }
 [class*="compareColAccent"] ul { color:rgba(255,255,255,.72) !important; }
 [class*="compareColAccent"] li:before { color:#9fe0c4 !important; }
-[class*="compareCol"] h2,[class*="compareColAccent"] h2 { white-space:nowrap !important; overflow:visible !important; word-break:normal !important; overflow-wrap:normal !important; width:max-content !important; max-width:none !important; margin-left:-18px !important; font-size:clamp(25px,2.45vw,36px) !important; line-height:1.02 !important; letter-spacing:-.035em !important; }
+/* Keep both comparison headlines on one line, but size them to the actual card content width. */
+[class*="compareCol"] h2,[class*="compareColAccent"] h2 { display:block !important; box-sizing:border-box !important; width:100% !important; max-width:100% !important; min-width:0 !important; margin-left:0 !important; margin-right:0 !important; padding:0 !important; white-space:nowrap !important; overflow:hidden !important; overflow-wrap:normal !important; word-break:normal !important; text-overflow:clip !important; font-size:clamp(22px,2.05vw,31px) !important; line-height:1.05 !important; letter-spacing:-.045em !important; }
 [class*="compareCol"] li,[class*="compareColAccent"] li { white-space:normal !important; overflow-wrap:normal !important; }
 
 [class*="how"] { display:block !important; padding:82px 0 88px !important; }
@@ -56,7 +57,7 @@
   [class*="compare"] { grid-template-columns:1fr !important; }
   [class*="steps"] > div { grid-template-columns:52px minmax(0,1fr) !important; column-gap:16px !important; }
   [class*="steps"] > div > h3,[class*="steps"] > div > p { white-space:normal !important; }
-  [class*="compareCol"] h2,[class*="compareColAccent"] h2 { white-space:normal !important; width:auto !important; max-width:100% !important; margin-left:0 !important; overflow-wrap:normal !important; }
+  [class*="compareCol"] h2,[class*="compareColAccent"] h2 { white-space:normal !important; width:auto !important; max-width:100% !important; margin-left:0 !important; overflow:hidden !important; }
   [class*="bundleCards"] article { aspect-ratio:9 / 16 !important; }
   [class*="creatorCta"] { flex-direction:column !important; align-items:flex-start !important; }
 }
