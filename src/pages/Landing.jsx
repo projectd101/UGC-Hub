@@ -17,27 +17,19 @@ const FAQS = [
 function goToSignIn() { window.location.href = "/sign-in"; }
 
 const marketplaceTagStyle = {
-  backgroundColor: "#000",
+  backgroundColor: "rgba(0, 0, 0, 0.72)",
   color: "#fff",
-  border: "1px solid #000",
-  borderRadius: "999px",
+  border: "1px solid rgba(0, 0, 0, 0.78)",
+  borderRadius: "7px",
   boxShadow: "none",
+  backdropFilter: "blur(4px)",
 };
 
 function CreatorPreview({ creator }) {
   const src = creator.videos[0];
   return (
     <div className={styles.creatorPreview}>
-      <video
-        className={styles.previewVideo}
-        src={src}
-        autoPlay
-        muted
-        playsInline
-        loop
-        preload="metadata"
-        aria-label={`${creator.name} reaction preview`}
-      />
+      <video className={styles.previewVideo} src={src} autoPlay muted playsInline loop preload="metadata" aria-label={`${creator.name} reaction preview`} />
     </div>
   );
 }
@@ -54,11 +46,7 @@ export default function Landing() {
       <main>
         <section className={styles.hero}>
           <div className={styles.heroCopy}><span className={styles.eyebrow}>The UGC marketplace for real reactions</span><h1 className={`${styles.heroHeadline} landingHeroHeadline`}>Buy a library of reactions.<br /><em>Keep the same face.</em></h1><p className={styles.heroSub}>Get 50 or 100 high-quality facial reaction clips from one real creator. Browse by emotion and niche, choose a face that fits your brand, and build a consistent UGC library.</p><div className={styles.heroCtas}><button className={styles.primaryBtn} onClick={goToSignIn}>Browse creators</button><button className={styles.ghostBtn} onClick={goToSignIn}>Become a creator</button></div><div className={styles.heroProof}><span>Real people</span><span>9:16 clips</span><span>50–100 clips / bundle</span><span>Commercial use</span></div></div>
-          <div className={styles.heroVisual}>
-            <div className={`${styles.videoTile} ${styles.tileOne}`}><video src="/videos/1.mp4" autoPlay muted loop playsInline preload="metadata" /></div>
-            <div className={`${styles.videoTile} ${styles.tileTwo}`}><video src="/videos/2.mp4" autoPlay muted loop playsInline preload="metadata" /></div>
-            <div className={`${styles.videoTile} ${styles.tileThree}`}><video src="/videos/3.mp4" autoPlay muted loop playsInline preload="metadata" /></div>
-          </div>
+          <div className={styles.heroVisual}><div className={`${styles.videoTile} ${styles.tileOne}`}><video src="/videos/1.mp4" autoPlay muted loop playsInline preload="metadata" /></div><div className={`${styles.videoTile} ${styles.tileTwo}`}><video src="/videos/2.mp4" autoPlay muted loop playsInline preload="metadata" /></div><div className={`${styles.videoTile} ${styles.tileThree}`}><video src="/videos/3.mp4" autoPlay muted loop playsInline preload="metadata" /></div></div>
         </section>
         <section id="marketplace" className={styles.marketplace}><div className={styles.sectionTop}><div><span className={styles.sectionKicker}>Marketplace</span><h2 className={styles.sectionHeadline}>Find the face your brand needs.</h2><p className={styles.sectionSub}>Every creator has a defined reaction library, niches, and video count.</p></div><button className={styles.textBtn} onClick={goToSignIn}>View all creators →</button></div>
           <div className={styles.creatorGrid}>{CREATORS.map((creator) => <article key={creator.id} className={styles.creatorCard}><CreatorPreview creator={creator} /><div className={styles.creatorInfo}><div className={styles.creatorIdentity}><span>{creator.handle}</span></div><div className={styles.tagRow}>{creator.reactions.map((r) => <span key={r} className={`${styles.tag} marketplaceTag`} style={marketplaceTagStyle}>{r}</span>)}</div><div className={styles.tagRow}>{creator.niches.map((n) => <span key={n} className={`${styles.nicheTag} marketplaceTag`} style={marketplaceTagStyle}>{n}</span>)}</div><div className={styles.cardBottom}><div><strong>{creator.clips}+</strong><span> videos</span></div><button onClick={goToSignIn}>View creator</button></div></div></article>)}</div>
