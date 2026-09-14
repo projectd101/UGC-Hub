@@ -1,0 +1,35 @@
+/* Premium creator marketplace cards */
+.creatorGrid{grid-template-columns:repeat(3,minmax(0,1fr));gap:24px;margin-top:28px}
+.creatorCard{position:relative;overflow:visible;border:0;border-radius:26px;background:#f4f4f2;box-shadow:0 1px 0 rgba(17,24,39,.08),0 18px 50px rgba(17,24,39,.08);transition:transform .28s cubic-bezier(.2,.8,.2,1),box-shadow .28s ease}
+.creatorCard:hover{transform:translateY(-8px);box-shadow:0 2px 0 rgba(17,24,39,.08),0 28px 70px rgba(17,24,39,.14)}
+.creatorPreview{height:365px;border-radius:26px;background:#dfe1df;box-shadow:inset 0 0 0 1px rgba(255,255,255,.32);isolation:isolate}
+.creatorPreview:after{content:"";position:absolute;inset:0;z-index:1;background:linear-gradient(180deg,rgba(0,0,0,.08) 0%,transparent 30%,transparent 60%,rgba(0,0,0,.24) 100%);pointer-events:none}
+.previewVideo{transform:scale(1.012);transition:transform .55s cubic-bezier(.2,.8,.2,1),filter .35s ease}
+.creatorCard:hover .previewVideo{transform:scale(1.055);filter:saturate(1.04)}
+.previewReaction{left:16px;top:16px;z-index:3;padding:8px 11px;border-radius:999px;background:rgba(255,255,255,.88);backdrop-filter:blur(12px);box-shadow:0 5px 18px rgba(0,0,0,.1);font-size:10px;font-weight:800;letter-spacing:.01em;color:#17191d}
+.previewReaction:before{content:"";display:inline-block;width:6px;height:6px;margin:0 7px 1px 0;border-radius:50%;background:#ef6a58;box-shadow:0 0 0 3px rgba(239,106,88,.14)}
+.previewCount{right:16px;top:16px;z-index:3;padding:8px 10px;border-radius:999px;background:rgba(18,20,24,.64);backdrop-filter:blur(12px);color:#fff;font-size:10px;font-weight:750;box-shadow:0 5px 18px rgba(0,0,0,.12)}
+.previewMuted{right:16px;bottom:16px;z-index:3;background:rgba(18,20,24,.64);backdrop-filter:blur(12px);color:rgba(255,255,255,.9);padding:7px 9px;border-radius:999px;font-size:8px;font-weight:700;letter-spacing:.1em}
+.creatorInfo{position:relative;z-index:4;margin:-28px 10px 10px;padding:20px 18px 17px;border:1px solid rgba(17,24,39,.07);border-radius:22px;background:rgba(255,255,255,.97);box-shadow:0 10px 30px rgba(17,24,39,.08);backdrop-filter:blur(18px)}
+.creatorIdentity{gap:11px}
+.avatar{width:42px;height:42px;flex:0 0 42px;border:2px solid #fff;background:linear-gradient(145deg,#1c1f24,#6d7470);color:#fff;box-shadow:0 4px 12px rgba(0,0,0,.14);font-size:10px;letter-spacing:.03em}
+.creatorIdentity h3{font-size:15px;line-height:1.15;letter-spacing:-.01em}
+.creatorIdentity span{display:block;margin-top:4px;font-size:11px;color:#7a827e}
+.tagRow{gap:6px;margin-top:14px}
+.tag,.nicheTag{padding:6px 9px;border-radius:999px;font-size:9px;font-weight:700;line-height:1;border:1px solid transparent}
+.tag{background:#f3f0ec;color:#4d514d;border-color:#e7e1da}
+.nicheTag{background:#f4f6f3;color:#68716b;border-color:#e0e5df}
+.cardBottom{margin-top:18px;padding-top:15px;gap:0;border-top:1px solid #ececea;align-items:center}
+.cardBottom div:first-child{display:flex;align-items:baseline;gap:3px}
+.cardBottom div:nth-child(2){margin-left:18px;display:flex;align-items:baseline;gap:3px}
+.cardBottom strong{font-size:18px;letter-spacing:-.03em}
+.cardBottom span{font-size:10px;color:#8a918d}
+.cardBottom button{margin-left:auto;padding:9px 13px;border:1px solid #dfe2df;border-radius:999px;background:#15181b;color:#fff;font-size:10px;font-weight:750;box-shadow:0 3px 0 #c9ccca;transition:transform .2s ease,box-shadow .2s ease,background .2s ease}
+.cardBottom button:hover{transform:translateY(-2px);background:#25292d;box-shadow:0 5px 0 #c9ccca}
+.cardBottom button:active{transform:translateY(1px);box-shadow:0 1px 0 #c9ccca}
+.creatorCard:nth-child(2) .creatorPreview{background:#e5e1dc}
+.creatorCard:nth-child(3) .creatorPreview{background:#dde2df}
+.creatorCard:nth-child(2) .previewReaction:before{background:#e19a45;box-shadow:0 0 0 3px rgba(225,154,69,.14)}
+.creatorCard:nth-child(3) .previewReaction:before{background:#6b8f7b;box-shadow:0 0 0 3px rgba(107,143,123,.14)}
+@media (max-width:1050px){.creatorGrid{grid-template-columns:1fr 1fr}.creatorPreview{height:390px}}
+@media (max-width:700px){.creatorGrid{grid-template-columns:1fr;gap:20px}.creatorPreview{height:430px}.creatorInfo{margin:-24px 8px 8px}}
