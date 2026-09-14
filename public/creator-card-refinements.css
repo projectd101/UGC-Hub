@@ -1,4 +1,4 @@
-/* Creator marketplace — preserve colour + ripple; slightly rectangular, translucent black tags */
+/* Creator marketplace — preserve colour + ripple; dedicated marketplace tag styling */
 .creatorGrid{grid-template-columns:repeat(3,minmax(0,1fr));gap:24px;margin-top:30px}
 .creatorCard{position:relative;overflow:hidden;border:0;border-radius:28px;background:#171918;min-height:0;box-shadow:0 18px 45px rgba(20,20,20,.12);transition:transform .35s cubic-bezier(.2,.8,.2,1),box-shadow .35s ease}
 .creatorCard:hover{transform:translateY(-7px);box-shadow:0 28px 65px rgba(20,20,20,.18)}
@@ -26,11 +26,12 @@
 .tagRow{position:relative;z-index:2;display:flex;gap:6px;margin:0;flex-wrap:wrap;min-width:0}
 .creatorInfo > [class*="tagRow"]:nth-of-type(2){grid-area:reactions}
 .creatorInfo > [class*="tagRow"]:nth-of-type(3){grid-area:niches}
-/* Marketplace tags: modest corner radius + translucent black surface, while keeping text fully white. */
-.tag,.nicheTag{padding:5px 9px !important;border:1px solid rgba(0,0,0,.62) !important;border-radius:7px !important;background:rgba(0,0,0,.72) !important;color:#fff !important;font-size:8px;font-weight:500;line-height:1.2;letter-spacing:.005em;backdrop-filter:blur(3px);transition:transform .2s ease,background .2s ease,color .2s ease}
-.tag:not(:last-child)::after{content:none}
-.tag:hover,.nicheTag:hover{transform:translateY(-1px);background:rgba(0,0,0,.78) !important;color:#fff !important}
-.nicheTag{background:rgba(0,0,0,.72) !important;color:#fff !important}
+/* Legacy tag classes stay available for the rest of the page; marketplaceTag is the only card-chip style. */
+.tag,.nicheTag{padding:5px 9px;border:1px solid transparent;border-radius:6px;background:#f5f5f6;color:inherit;font-size:8px;font-weight:500;line-height:1.2;letter-spacing:.005em;backdrop-filter:none;transition:transform .2s ease,background .2s ease,color .2s ease}
+.nicheTag{background:#faf7ff;color:var(--violet)}
+/* Dedicated selector deliberately beats the legacy .tag/.nicheTag rules. */
+.creatorInfo .marketplaceTag{padding:5px 9px !important;border:1px solid rgba(0,0,0,.48) !important;border-radius:7px !important;background:rgba(0,0,0,.62) !important;color:#fff !important;font-size:8px !important;font-weight:500 !important;line-height:1.2;letter-spacing:.005em;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);box-shadow:none !important;opacity:1 !important;transition:transform .2s ease,background .2s ease,color .2s ease}
+.creatorInfo .marketplaceTag:hover{transform:translateY(-1px);background:rgba(0,0,0,.70) !important;color:#fff !important}
 .creatorCard:nth-child(1) .creatorInfo{background:linear-gradient(135deg,#d8f3e6 0%,#9edbc7 48%,#7bc8b1 100%) !important}
 .creatorCard:nth-child(2) .creatorInfo{background:linear-gradient(135deg,#ffd9b8 0%,#f7a88e 48%,#ed7f88 100%) !important}
 .creatorCard:nth-child(3) .creatorInfo{background:linear-gradient(135deg,#ddd2ff 0%,#a9bfff 48%,#7f9ff5 100%) !important}
