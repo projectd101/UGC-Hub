@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Archivo:ital,wght@0,500;0,600;0,700;0,800;1,600&family=Inter:wght@400;500;600&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
 
 :root {
   --bg: #ffffff;
@@ -13,7 +13,7 @@
 
   --line: #e6e6e8;
 
-  --font-display: "Archivo", system-ui, sans-serif;
+  --font-display: "Inter", system-ui, sans-serif;
   --font-body: "Inter", system-ui, sans-serif;
 }
 
