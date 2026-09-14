@@ -22,7 +22,7 @@ export default function SignIn() {
               <a href="/" className={styles.videoLogo} aria-label="UGC Hub home">
                 <span>UGC</span><b>Hub</b>
               </a>
-              <span className={styles.videoBadge}>REAL REACTIONS · UGC HUB</span>
+              <h1 className={styles.videoTitle}>Real Reactions for founders I Real Money for Creators</h1>
             </div>
 
             <div className={styles.cardBody}>
