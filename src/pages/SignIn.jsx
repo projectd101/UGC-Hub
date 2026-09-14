@@ -19,13 +19,13 @@ export default function SignIn() {
                 playsInline
                 preload="auto"
               />
+              <a href="/" className={styles.videoLogo} aria-label="UGC Hub home">
+                <span>UGC</span><b>Hub</b>
+              </a>
+              <span className={styles.videoBadge}>REAL REACTIONS · UGC HUB</span>
             </div>
 
             <div className={styles.cardBody}>
-              <a href="/" className={styles.logo} aria-label="UGC Hub home">
-                <span>UGC</span><b>Hub</b>
-              </a>
-
               <p className={styles.continueLabel}>Continue as</p>
 
               <div className={styles.choice}>
