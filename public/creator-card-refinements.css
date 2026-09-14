@@ -8,7 +8,6 @@
 [class*="creatorCard"]:hover [class*="previewVideo"]{transform:scale(1.06);filter:saturate(1.08) contrast(1.02)}
 [class*="previewCount"]{right:16px;top:16px;z-index:4;padding:7px 10px;border:1px solid rgba(255,255,255,.7);border-radius:999px;background:rgba(255,255,255,.82);backdrop-filter:blur(12px);color:#202020;font-size:10px;font-weight:750;box-shadow:0 6px 18px rgba(0,0,0,.1)}
 
-/* The bottom panel is a real redesign: coloured, asymmetric, and integrated rather than a white information box. */
 [class*="creatorInfo"]{position:relative;isolation:isolate;display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"identity stats" "reactions reactions" "niches niches" "action action";gap:13px 18px;left:auto;right:auto;bottom:auto;margin:0;padding:22px;color:#17211f;background:linear-gradient(135deg,#d8f3e6,#7bc8b1)!important;box-shadow:none;border:0;backdrop-filter:none;overflow:hidden;min-height:236px}
 [class*="creatorInfo"]:before{content:"";position:absolute;inset:-45% -30%;z-index:0;pointer-events:none;background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,0) 34%,rgba(255,255,255,.72) 49%,rgba(255,255,255,.12) 57%,transparent 72%);filter:blur(16px);transform:translateX(-110%) rotate(-7deg);animation:creatorHorizontalRipple 4.8s cubic-bezier(.4,0,.2,1) infinite}
 [class*="creatorInfo"]:after{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background:radial-gradient(circle at 12% 88%,rgba(255,255,255,.28),transparent 32%),radial-gradient(circle at 92% 8%,rgba(255,255,255,.22),transparent 28%)}
@@ -27,20 +26,18 @@
 [class*="cardBottom"] span{font-size:9px;line-height:1.2;color:rgba(23,33,31,.58)}
 
 [class*="tagRow"]{position:relative;z-index:2;display:flex;gap:7px;margin:0;flex-wrap:wrap;min-width:0}
-[class*="creatorInfo"] > [class*="tagRow"]:nth-of-type(1){grid-area:reactions}
-[class*="creatorInfo"] > [class*="tagRow"]:nth-of-type(2){grid-area:niches}
+[class*="creatorInfo"] > [class*="tagRow"]{grid-area:reactions}
+[class*="creatorInfo"] > [class*="tagRow"] + [class*="tagRow"]{grid-area:niches}
 [class*="tag"],[class*="nicheTag"]{padding:7px 11px;border-radius:999px;font-size:9px;font-weight:700;line-height:1;border:1px solid rgba(23,33,31,.12);background:rgba(255,255,255,.52);color:#25322f;backdrop-filter:blur(8px);transition:transform .2s ease,background .2s ease}
 [class*="tag"]:hover,[class*="nicheTag"]:hover{transform:translateY(-2px);background:rgba(255,255,255,.76)}
 [class*="nicheTag"]{background:rgba(23,33,31,.09);color:rgba(23,33,31,.76);border-color:rgba(23,33,31,.10)}
 
-/* CTA is its own bottom action rail, not part of the stats block. */
 [class*="cardBottom"] button{grid-column:1 / -1;position:relative;overflow:hidden;margin:2px 0 0;padding:11px 16px;border:0;border-radius:13px;background:#17211f;color:#fff;font-size:10px;font-weight:800;box-shadow:0 5px 0 rgba(23,33,31,.18);cursor:pointer;transition:transform .2s ease,box-shadow .2s ease,background .2s ease}
 [class*="cardBottom"] button:after{content:"";position:absolute;top:-70%;bottom:-70%;left:-80%;width:34%;transform:skewX(-18deg);background:linear-gradient(90deg,transparent,rgba(255,255,255,.46),transparent);transition:left .65s ease}
 [class*="cardBottom"] button:hover{transform:translateY(-2px);background:#263b36;box-shadow:0 7px 0 rgba(23,33,31,.18)}
 [class*="cardBottom"] button:hover:after{left:145%}
 [class*="cardBottom"] button:active{transform:translateY(1px);box-shadow:0 2px 0 rgba(23,33,31,.18)}
 
-/* Distinct colour identities — deliberately no white panel. */
 [class*="creatorCard"]:nth-child(1) [class*="creatorInfo"]{background:linear-gradient(135deg,#d8f3e6 0%,#9edbc7 48%,#69c4a7 100%)!important}
 [class*="creatorCard"]:nth-child(2) [class*="creatorInfo"]{background:linear-gradient(135deg,#ffd9b8 0%,#f6a17f 48%,#e8757f 100%)!important}
 [class*="creatorCard"]:nth-child(3) [class*="creatorInfo"]{background:linear-gradient(135deg,#e0d5ff 0%,#aabcfb 48%,#7895ec 100%)!important}
