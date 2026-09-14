@@ -1,7 +1,7 @@
 @import url("https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap");
 
-/* Hero typography: cleaner, straighter, lighter-weight bold with a wider editorial silhouette. */
-.heroHeadline {
+/* These hooks are intentionally non-module classes so this stylesheet can target the CSS-module markup. */
+.landingHeroHeadline {
   font-family: "Instrument Sans", Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
   font-size: 66px !important;
   line-height: 0.99 !important;
@@ -9,33 +9,33 @@
   letter-spacing: -0.042em !important;
 }
 
-.heroHeadline em {
+.landingHeroHeadline em {
   font-family: inherit !important;
   font-weight: 700 !important;
 }
 
 /* Make the hero "Become a creator" button match the white/silver Sign in button. */
-.secondaryBtn {
+.landingCreatorButton {
   color: #202226 !important;
   background: linear-gradient(180deg,#fff 0%,#e1e3e7 15%,#9da2aa 43%,#f5f6f7 68%,#b0b5bc 88%,#fdfdfd 100%) padding-box,linear-gradient(180deg,#fff 0%,#777d85 24%,#f7f8f9 48%,#686e76 74%,#fff 100%) border-box !important;
   border-color: transparent !important;
   box-shadow: inset 0 1px 1px #fff,inset 0 2px 4px rgba(255,255,255,.34),inset 0 -3px 5px rgba(0,0,0,.22),0 2px 0 #92979e,0 7px 17px rgba(0,0,0,.09) !important;
 }
 
-.secondaryBtn:hover {
+.landingCreatorButton:hover {
   color: #101114 !important;
   transform: translateY(-2px) scale(1.01) !important;
   filter: brightness(1.04) !important;
   box-shadow: inset 0 1px 1px #fff,inset 0 3px 5px rgba(255,255,255,.40),inset 0 -3px 5px rgba(0,0,0,.25),0 3px 0 #8b9097,0 10px 20px rgba(0,0,0,.11) !important;
 }
 
-.secondaryBtn:active {
+.landingCreatorButton:active {
   transform: translateY(1px) scale(.985) !important;
   box-shadow: inset 0 2px 4px rgba(0,0,0,.26),0 1px 0 #8b9097,0 4px 10px rgba(0,0,0,.08) !important;
 }
 
 @media (max-width: 900px) {
-  .heroHeadline {
+  .landingHeroHeadline {
     font-size: clamp(48px, 8vw, 66px) !important;
   }
 }
