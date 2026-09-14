@@ -52,9 +52,41 @@
   pointer-events: none;
 }
 
+.videoLogo {
+  position: absolute;
+  z-index: 3;
+  top: 18px;
+  left: 18px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  color: #fff;
+  background: rgba(17,22,20,.78);
+  border: 1px solid rgba(255,255,255,.28);
+  border-radius: 10px;
+  padding: 5px 10px 5px 5px;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -.04em;
+  text-decoration: none;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 8px 22px rgba(0,0,0,.18), inset 0 1px 0 rgba(255,255,255,.2);
+}
+
+.videoLogo span {
+  background: #fff;
+  color: #111614;
+  border-radius: 6px;
+  padding: 4px 7px;
+  margin-right: 5px;
+}
+
+.videoLogo b { font-weight: 800; }
+
 .videoBadge {
   position: absolute;
-  z-index: 2;
+  z-index: 3;
   left: 18px;
   bottom: 18px;
   padding: 8px 11px;
@@ -79,33 +111,6 @@
   padding: 34px;
   background: linear-gradient(180deg, #fff 0%, #fbfcfb 100%);
 }
-
-.logo {
-  align-self: flex-start;
-  display: inline-flex;
-  align-items: center;
-  gap: 0;
-  margin-bottom: 30px;
-  color: #fff;
-  background: #111614;
-  border-radius: 10px;
-  padding: 5px 10px 5px 5px;
-  font-size: 18px;
-  font-weight: 800;
-  letter-spacing: -.04em;
-  text-decoration: none;
-  box-shadow: 0 4px 0 #d7dbd8, 0 10px 20px rgba(17,22,20,.08);
-}
-
-.logo span {
-  background: #fff;
-  color: #111614;
-  border-radius: 6px;
-  padding: 4px 7px;
-  margin-right: 5px;
-}
-
-.logo b { font-weight: 800; }
 
 .continueLabel {
   margin: 0 0 14px;
