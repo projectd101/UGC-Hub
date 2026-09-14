@@ -62,6 +62,7 @@
 [class*="rightsGrid"] div { padding:20px !important; min-height:92px; border:1px solid rgba(18,29,25,.08) !important; border-radius:14px !important; background:#f5f7f5 !important; box-shadow:0 6px 18px rgba(18,29,25,.05),inset 0 1px 0 #fff !important; }
 
 [class*="creatorCta"] { width:min(1160px,calc(100% - 64px)) !important; max-width:1160px !important; margin:0 auto !important; padding:46px 48px !important; display:flex !important; flex-direction:row !important; align-items:center !important; justify-content:space-between !important; gap:40px !important; border-radius:24px !important; background:linear-gradient(135deg,#142b24 0%,#0d211b 100%) !important; color:#fff !important; box-shadow:0 22px 55px rgba(13,33,27,.18),inset 0 1px 0 rgba(255,255,255,.12) !important; }
+[class*="creatorCta"] h2 { color:#fff !important; }
 
 @media (max-width:800px) {
   [class*="reactionExplorer"],[class*="compare"],[class*="how"],[class*="bundleSection"],[class*="rights"],[class*="creatorCta"] { width:min(100% - 40px,1160px); }
