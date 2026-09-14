@@ -1,54 +1,52 @@
-/* Creator marketplace — colourful editorial creator cards */
-.creatorGrid{grid-template-columns:repeat(3,minmax(0,1fr));gap:24px;margin-top:30px}
-.creatorCard{position:relative;overflow:hidden;border:0;border-radius:28px;background:#171918;min-height:0;box-shadow:0 18px 45px rgba(20,20,20,.12);transition:transform .35s cubic-bezier(.2,.8,.2,1),box-shadow .35s ease}
-.creatorCard:hover{transform:translateY(-7px);box-shadow:0 28px 65px rgba(20,20,20,.18)}
-.creatorPreview{height:360px;border-radius:0;background:#ddd;position:relative;overflow:hidden}
-.creatorPreview:before{content:"";position:absolute;inset:0;z-index:1;background:linear-gradient(180deg,rgba(10,10,10,.02) 35%,rgba(10,10,10,.12) 100%);pointer-events:none}
-.previewVideo{transform:scale(1.01);transition:transform .8s cubic-bezier(.2,.8,.2,1),filter .5s ease}
-.creatorCard:hover .previewVideo{transform:scale(1.06);filter:saturate(1.08) contrast(1.02)}
-.previewCount{right:16px;top:16px;z-index:4;padding:7px 10px;border:1px solid rgba(255,255,255,.7);border-radius:999px;background:rgba(255,255,255,.82);backdrop-filter:blur(12px);color:#202020;font-size:10px;font-weight:750;box-shadow:0 6px 18px rgba(0,0,0,.1)}
+/* Creator marketplace — colourful editorial creator cards. Uses substring selectors because Landing.module.css hashes class names. */
+[class*="creatorGrid"]{grid-template-columns:repeat(3,minmax(0,1fr));gap:24px;margin-top:30px}
+[class*="creatorCard"]{position:relative;overflow:hidden;border:0;border-radius:28px;background:#171918;min-height:0;box-shadow:0 18px 45px rgba(20,20,20,.12);transition:transform .35s cubic-bezier(.2,.8,.2,1),box-shadow .35s ease}
+[class*="creatorCard"]:hover{transform:translateY(-7px);box-shadow:0 28px 65px rgba(20,20,20,.18)}
+[class*="creatorPreview"]{height:360px;border-radius:0;background:#ddd;position:relative;overflow:hidden}
+[class*="creatorPreview"]:before{content:"";position:absolute;inset:0;z-index:1;background:linear-gradient(180deg,rgba(10,10,10,.02) 35%,rgba(10,10,10,.12) 100%);pointer-events:none}
+[class*="previewVideo"]{transform:scale(1.01);transition:transform .8s cubic-bezier(.2,.8,.2,1),filter .5s ease}
+[class*="creatorCard"]:hover [class*="previewVideo"]{transform:scale(1.06);filter:saturate(1.08) contrast(1.02)}
+[class*="previewCount"]{right:16px;top:16px;z-index:4;padding:7px 10px;border:1px solid rgba(255,255,255,.7);border-radius:999px;background:rgba(255,255,255,.82);backdrop-filter:blur(12px);color:#202020;font-size:10px;font-weight:750;box-shadow:0 6px 18px rgba(0,0,0,.1)}
 
-/* Bottom data panel: integrated colour field, asymmetric editorial layout. */
-.creatorInfo{position:relative;isolation:isolate;display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"identity stats" "reactions reactions" "niches niches" "action action";gap:14px 18px;left:auto;right:auto;bottom:auto;margin:0;padding:22px;color:#17211f;background:linear-gradient(135deg,#d9f1e5,#a9dec9) !important;box-shadow:none;border:0;backdrop-filter:none;overflow:hidden}
-.creatorInfo:before,.creatorInfo:after{content:"";position:absolute;inset:-35%;z-index:-1;pointer-events:none;border-radius:50%;transform:translateX(-125%) rotate(-8deg);opacity:0;background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,.05) 35%,rgba(255,255,255,.48) 50%,rgba(255,255,255,.08) 65%,transparent 100%);filter:blur(10px);transition:opacity .2s ease}
-.creatorInfo:after{transform:translateX(-145%) rotate(-8deg);opacity:.35;background:linear-gradient(90deg,transparent,rgba(255,255,255,.16),transparent);filter:blur(18px)}
-.creatorCard:hover .creatorInfo:before{animation:creatorPanelRipple 1.15s cubic-bezier(.2,.7,.2,1) forwards;opacity:1}
-.creatorCard:hover .creatorInfo:after{animation:creatorPanelRipple 1.15s .12s cubic-bezier(.2,.7,.2,1) forwards;opacity:1}
-@keyframes creatorPanelRipple{0%{transform:translateX(-125%) rotate(-8deg);opacity:0}12%{opacity:1}55%{opacity:.9}100%{transform:translateX(125%) rotate(-8deg);opacity:0}}
+/* The bottom panel is a real redesign: coloured, asymmetric, and integrated rather than a white information box. */
+[class*="creatorInfo"]{position:relative;isolation:isolate;display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"identity stats" "reactions reactions" "niches niches" "action action";gap:13px 18px;left:auto;right:auto;bottom:auto;margin:0;padding:22px;color:#17211f;background:linear-gradient(135deg,#d8f3e6,#7bc8b1)!important;box-shadow:none;border:0;backdrop-filter:none;overflow:hidden;min-height:236px}
+[class*="creatorInfo"]:before{content:"";position:absolute;inset:-45% -30%;z-index:0;pointer-events:none;background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,0) 34%,rgba(255,255,255,.72) 49%,rgba(255,255,255,.12) 57%,transparent 72%);filter:blur(16px);transform:translateX(-110%) rotate(-7deg);animation:creatorHorizontalRipple 4.8s cubic-bezier(.4,0,.2,1) infinite}
+[class*="creatorInfo"]:after{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background:radial-gradient(circle at 12% 88%,rgba(255,255,255,.28),transparent 32%),radial-gradient(circle at 92% 8%,rgba(255,255,255,.22),transparent 28%)}
+[class*="creatorInfo"] > *{position:relative;z-index:2}
+@keyframes creatorHorizontalRipple{0%{transform:translateX(-110%) rotate(-7deg);opacity:0}10%{opacity:1}48%{opacity:.82}78%{opacity:.28}100%{transform:translateX(110%) rotate(-7deg);opacity:0}}
 
-.creatorIdentity{grid-area:identity;gap:12px;align-items:center;min-width:0}
-.avatar{width:48px;height:48px;flex:0 0 48px;border:2px solid rgba(255,255,255,.82);background:#17211f;color:#fff;box-shadow:0 7px 18px rgba(23,33,31,.16);font-size:10px;letter-spacing:.03em}
-.creatorIdentity h3{font-size:20px;line-height:1.02;letter-spacing:-.035em;color:#17211f}
-.creatorIdentity span{display:block;margin-top:5px;font-size:11px;color:rgba(23,33,31,.62)}
+[class*="creatorIdentity"]{grid-area:identity;gap:12px;align-items:center;min-width:0}
+[class*="avatar"]{width:50px;height:50px;flex:0 0 50px;border:2px solid rgba(255,255,255,.86);background:#17211f;color:#fff;box-shadow:0 8px 20px rgba(23,33,31,.18);font-size:10px;letter-spacing:.03em}
+[class*="creatorIdentity"] h3{font-size:22px;line-height:1;letter-spacing:-.04em;color:#17211f}
+[class*="creatorIdentity"] span{display:block;margin-top:5px;font-size:11px;color:rgba(23,33,31,.62)}
 
-.cardBottom{grid-area:stats;margin:0;padding:0;border:0;display:grid;grid-template-columns:auto auto;gap:7px;align-items:center;align-self:center}
-.cardBottom div:first-child,.cardBottom div:nth-child(2){display:flex;flex-direction:column;align-items:flex-end;gap:0}
-.cardBottom div:nth-child(2){margin-left:0}
-.cardBottom strong{font-size:21px;line-height:1;letter-spacing:-.045em;color:#17211f}
-.cardBottom span{font-size:9px;line-height:1.2;color:rgba(23,33,31,.58)}
-.cardBottom button{grid-column:1 / -1;margin:7px 0 0;padding:10px 15px;border:0;border-radius:999px;background:#17211f;color:#fff;font-size:10px;font-weight:800;box-shadow:0 5px 0 rgba(23,33,31,.16);cursor:pointer;transition:transform .2s ease,box-shadow .2s ease,background .2s ease}
-.cardBottom button:hover{transform:translateY(-2px);background:#263b36;box-shadow:0 7px 0 rgba(23,33,31,.16)}
-.cardBottom button:active{transform:translateY(1px);box-shadow:0 2px 0 rgba(23,33,31,.16)}
+[class*="cardBottom"]{grid-area:stats;margin:0;padding:0;border:0;display:grid;grid-template-columns:auto auto;gap:9px;align-items:center;align-self:start}
+[class*="cardBottom"] div:first-child,[class*="cardBottom"] div:nth-child(2){display:flex;flex-direction:column;align-items:flex-end;gap:2px;padding-left:12px;border-left:1px solid rgba(23,33,31,.18)}
+[class*="cardBottom"] div:nth-child(2){margin-left:0}
+[class*="cardBottom"] strong{font-size:22px;line-height:1;letter-spacing:-.045em;color:#17211f}
+[class*="cardBottom"] span{font-size:9px;line-height:1.2;color:rgba(23,33,31,.58)}
 
-.tagRow{position:relative;z-index:2;display:flex;gap:7px;margin:0;flex-wrap:wrap;min-width:0}
-.creatorInfo > .tagRow:nth-of-type(1){grid-area:reactions}
-.creatorInfo > .tagRow:nth-of-type(2){grid-area:niches}
-.tag,.nicheTag{padding:7px 10px;border-radius:9px;font-size:9px;font-weight:700;line-height:1;border:1px solid rgba(23,33,31,.11);background:rgba(255,255,255,.46);color:#25322f;backdrop-filter:blur(8px);transition:transform .2s ease,background .2s ease}
-.tag:hover,.nicheTag:hover{transform:translateY(-1px);background:rgba(255,255,255,.7)}
-.nicheTag{background:rgba(23,33,31,.08);color:rgba(23,33,31,.76);border-color:rgba(23,33,31,.09)}
+[class*="tagRow"]{position:relative;z-index:2;display:flex;gap:7px;margin:0;flex-wrap:wrap;min-width:0}
+[class*="creatorInfo"] > [class*="tagRow"]:nth-of-type(1){grid-area:reactions}
+[class*="creatorInfo"] > [class*="tagRow"]:nth-of-type(2){grid-area:niches}
+[class*="tag"],[class*="nicheTag"]{padding:7px 11px;border-radius:999px;font-size:9px;font-weight:700;line-height:1;border:1px solid rgba(23,33,31,.12);background:rgba(255,255,255,.52);color:#25322f;backdrop-filter:blur(8px);transition:transform .2s ease,background .2s ease}
+[class*="tag"]:hover,[class*="nicheTag"]:hover{transform:translateY(-2px);background:rgba(255,255,255,.76)}
+[class*="nicheTag"]{background:rgba(23,33,31,.09);color:rgba(23,33,31,.76);border-color:rgba(23,33,31,.10)}
 
-/* The CTA becomes its own full-width action strip instead of living beside the stats. */
-.cardBottom button{position:relative;overflow:hidden}
-.cardBottom button:after{content:"";position:absolute;top:-60%;bottom:-60%;left:-80%;width:38%;transform:skewX(-18deg);background:linear-gradient(90deg,transparent,rgba(255,255,255,.42),transparent);transition:left .65s ease}
-.cardBottom button:hover:after{left:145%}
+/* CTA is its own bottom action rail, not part of the stats block. */
+[class*="cardBottom"] button{grid-column:1 / -1;position:relative;overflow:hidden;margin:2px 0 0;padding:11px 16px;border:0;border-radius:13px;background:#17211f;color:#fff;font-size:10px;font-weight:800;box-shadow:0 5px 0 rgba(23,33,31,.18);cursor:pointer;transition:transform .2s ease,box-shadow .2s ease,background .2s ease}
+[class*="cardBottom"] button:after{content:"";position:absolute;top:-70%;bottom:-70%;left:-80%;width:34%;transform:skewX(-18deg);background:linear-gradient(90deg,transparent,rgba(255,255,255,.46),transparent);transition:left .65s ease}
+[class*="cardBottom"] button:hover{transform:translateY(-2px);background:#263b36;box-shadow:0 7px 0 rgba(23,33,31,.18)}
+[class*="cardBottom"] button:hover:after{left:145%}
+[class*="cardBottom"] button:active{transform:translateY(1px);box-shadow:0 2px 0 rgba(23,33,31,.18)}
 
-/* Distinct colour identities — no white information rectangle. */
-.creatorCard:nth-child(1) .creatorInfo{background:linear-gradient(135deg,#d8f3e6 0%,#9edbc7 48%,#7bc8b1 100%) !important}
-.creatorCard:nth-child(2) .creatorInfo{background:linear-gradient(135deg,#ffd9b8 0%,#f7a88e 48%,#ed7f88 100%) !important}
-.creatorCard:nth-child(3) .creatorInfo{background:linear-gradient(135deg,#ddd2ff 0%,#a9bfff 48%,#7f9ff5 100%) !important}
-.creatorCard:nth-child(1){background:#9edbc7}
-.creatorCard:nth-child(2){background:#f7a88e}
-.creatorCard:nth-child(3){background:#a9bfff}
+/* Distinct colour identities — deliberately no white panel. */
+[class*="creatorCard"]:nth-child(1) [class*="creatorInfo"]{background:linear-gradient(135deg,#d8f3e6 0%,#9edbc7 48%,#69c4a7 100%)!important}
+[class*="creatorCard"]:nth-child(2) [class*="creatorInfo"]{background:linear-gradient(135deg,#ffd9b8 0%,#f6a17f 48%,#e8757f 100%)!important}
+[class*="creatorCard"]:nth-child(3) [class*="creatorInfo"]{background:linear-gradient(135deg,#e0d5ff 0%,#aabcfb 48%,#7895ec 100%)!important}
+[class*="creatorCard"]:nth-child(1){background:#9edbc7}
+[class*="creatorCard"]:nth-child(2){background:#f6a17f}
+[class*="creatorCard"]:nth-child(3){background:#aabcfb}
 
-@media (max-width:1050px){.creatorGrid{grid-template-columns:1fr 1fr}.creatorPreview{height:360px}}
-@media (max-width:700px){.creatorGrid{grid-template-columns:1fr;gap:20px}.creatorPreview{height:390px}}
+@media (max-width:1050px){[class*="creatorGrid"]{grid-template-columns:1fr 1fr}[class*="creatorPreview"]{height:360px}}
+@media (max-width:700px){[class*="creatorGrid"]{grid-template-columns:1fr;gap:20px}[class*="creatorPreview"]{height:390px}}
