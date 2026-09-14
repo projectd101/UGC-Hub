@@ -1,33 +1,27 @@
-/* Remove the large structural divider rules between landing-page sections. */
-.marketplace,
-.reactionExplorer,
-.how,
-.bundleSection,
-.rights {
+/* Remove the large horizontal rules that visually divide the landing page into sections. */
+
+[class*="marketplace"],
+[class*="reactionExplorer"],
+[class*="how"],
+[class*="bundleSection"],
+[class*="rights"] {
   border-top: 0 !important;
 }
 
-.rights {
+[class*="rights"] {
   border-bottom: 0 !important;
 }
 
-.filters,
-.reactionGrid,
-.steps {
+[class*="filters"],
+[class*="reactionGrid"],
+[class*="steps"] {
   border-top: 0 !important;
 }
 
-.steps {
+[class*="steps"] {
   border-bottom: 0 !important;
 }
 
-.steps > div,
-.rightsGrid div,
-.cardBottom,
-.reactionItem {
-  border-bottom: 0 !important;
-}
-
-.steps > div {
+[class*="steps"] > div {
   border-right: 0 !important;
 }
