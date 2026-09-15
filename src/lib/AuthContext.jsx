@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { supabase } from "../supabaseClient";
 
 const AuthContext = createContext(null);
+const PRODUCTION_URL = "https://ugc-hub-theta.vercel.app";
 
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(undefined); // undefined = loading
@@ -9,7 +10,20 @@ export function AuthProvider({ children }) {
   const [loadingProfile, setLoadingProfile] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => setSession(data.session));
+    supabase.auth.getSession().then(({ data }) => {
+      setSession(data.session);
+
+      // Supabase's implicit OAuth flow returns the session in the URL hash.
+      // The client consumes it, so remove the credentials from the address bar.
+      if (window.location.hash) {
+        window.history.replaceState(
+          {},
+          document.title,
+          `${window.location.pathname}${window.location.search}`
+        );
+      }
+    });
+
     const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => {
       setSession(s);
     });
@@ -41,8 +55,6 @@ export function AuthProvider({ children }) {
             p_role: pendingRole,
           });
           if (updated) data = updated;
-          // Clean the role param out of the URL so a refresh doesn't
-          // re-trigger anything odd.
           params.delete("role");
           const clean =
             window.location.pathname +
@@ -60,14 +72,19 @@ export function AuthProvider({ children }) {
   }, [session?.user?.id]);
 
   async function signInWithGoogle(role) {
-    // role is passed as a query param on the redirect and read back after
-    // OAuth completes, since Supabase's Google OAuth doesn't let us attach
-    // custom user_metadata before the account exists. See the effect above.
-    const redirectTo = `${window.location.origin}/?role=${role}`;
-    await supabase.auth.signInWithOAuth({
+    // Always return to the real production app. Using window.location.origin
+    // here was allowing the Supabase project's localhost Site URL/configuration
+    // to send production OAuth callbacks to localhost.
+    const redirectTo = `${PRODUCTION_URL}/?role=${role}`;
+    const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: { redirectTo },
     });
+
+    if (error) {
+      console.error("Google OAuth error:", error);
+      throw error;
+    }
   }
 
   async function signOut() {
