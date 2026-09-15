@@ -11,12 +11,27 @@ function BellIcon() {
   return <span className={styles.bellGlyph} aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg></span>;
 }
 
+function CreatorSkeleton() {
+  return (
+    <div className={styles.creatorCard} aria-hidden="true">
+      <div className={styles.skeletonLine} />
+      <div className={`${styles.skeletonLine} ${styles.skeletonLineWide}`} />
+      <div className={styles.skeletonPills}>
+        <span /><span /><span />
+      </div>
+      <div className={styles.skeletonMeta}>
+        <span />
+        <span />
+      </div>
+      <div className={styles.skeletonButton} />
+    </div>
+  );
+}
+
 export default function FounderDashboard() {
   const { signOut, user, profile } = useAuth();
   const [creators, setCreators] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [unlocks, setUnlocks] = useState({});
-  const [unlocking, setUnlocking] = useState(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [activePanel, setActivePanel] = useState(null);
@@ -31,22 +46,6 @@ export default function FounderDashboard() {
         setLoading(false);
       });
   }, []);
-
-  async function handleUnlock(creatorId) {
-    setUnlocking(creatorId);
-    const { error } = await supabase.rpc("fake_unlock_creator", {
-      p_creator_id: creatorId,
-      p_amount_cents: 5000,
-    });
-
-    if (!error) {
-      const { data: contact } = await supabase.rpc("get_creator_contact", {
-        p_creator_id: creatorId,
-      });
-      setUnlocks((prev) => ({ ...prev, [creatorId]: contact }));
-    }
-    setUnlocking(null);
-  }
 
   function openMenu(panel = null) {
     setNotificationsOpen(false);
@@ -76,7 +75,10 @@ export default function FounderDashboard() {
       )}
 
       <header className={styles.header}>
-        <span className={styles.logo}>UGC Hub</span>
+        <a href="/" className={`${styles.logo} ugcBrandMark`} aria-label="UGC Hub home">
+          <span className="ugcBrandMark__ugc">UGC</span>
+          <span className="ugcBrandMark__hub">Hub</span>
+        </a>
         <div className={styles.headerActions}>
           <button
             className={styles.iconButton}
@@ -137,7 +139,7 @@ export default function FounderDashboard() {
           <div className={styles.drawerDetail}>
             <span className={styles.panelEyebrow}>{activePanel === "profile" ? "Account" : activePanel === "history" ? "Activity" : "Library"}</span>
             <h3>{activePanel === "profile" ? "Profile information" : activePanel === "history" ? "History" : "Saves"}</h3>
-            <p>{activePanel === "profile" ? "Your founder account details will live here." : activePanel === "history" ? "Your creator unlock and purchase history will appear here." : "Creators and libraries you save will appear here."}</p>
+            <p>{activePanel === "profile" ? "Your founder account details will live here." : activePanel === "history" ? "Your creator library browsing and activity history will appear here." : "Creators and reaction libraries you save will appear here."}</p>
           </div>
         )}
 
@@ -148,29 +150,41 @@ export default function FounderDashboard() {
 
       <main className={styles.main}>
         <h1 className={styles.title}>Browse creators</h1>
-        <p className={styles.subtitle}>Unlock a profile to see their contact info and reach out directly.</p>
+        <p className={styles.subtitle}>Browse creator reaction libraries. Once creators are active, their available content will appear here — no founder-side unlocks or payments.</p>
 
-        {loading && <p className={styles.dim}>Loading…</p>}
-        {!loading && creators.length === 0 && <p className={styles.dim}>No creators yet — check back soon, or be the first to post a request once that's live.</p>}
+        {loading && (
+          <div className={styles.grid} aria-label="Loading creators">
+            <CreatorSkeleton />
+            <CreatorSkeleton />
+            <CreatorSkeleton />
+            <CreatorSkeleton />
+          </div>
+        )}
 
-        <div className={styles.grid}>
-          {creators.map((c) => {
-            const contact = unlocks[c.id];
-            return (
+        {!loading && creators.length === 0 && (
+          <div className={styles.emptyCreatorState}>
+            <div className={styles.emptyCreatorIcon} />
+            <strong>No creator libraries yet</strong>
+            <span>Creator libraries will appear here automatically once creators are active.</span>
+          </div>
+        )}
+
+        {!loading && creators.length > 0 && (
+          <div className={styles.grid}>
+            {creators.map((c) => (
               <div key={c.id} className={styles.creatorCard}>
                 <h3>{c.display_name}</h3>
                 {c.bio && <p className={styles.bio}>{c.bio}</p>}
                 {c.reactions?.length > 0 && <div className={styles.pillRow}>{c.reactions.map((r) => <span key={r} className={styles.pill}>{r}</span>)}</div>}
                 {c.niches?.length > 0 && <div className={styles.pillRow}>{c.niches.map((n) => <span key={n} className={`${styles.pill} ${styles.pillViolet}`}>{n}</span>)}</div>}
-                {contact ? (
-                  <div className={styles.unlockedBox}><span className={styles.unlockedLabel}>Contact</span><span>{contact || "No contact info listed"}</span></div>
-                ) : (
-                  <button className={styles.unlockBtn} onClick={() => handleUnlock(c.id)} disabled={unlocking === c.id}>{unlocking === c.id ? "Unlocking…" : "Pay $50 to unlock contact"}</button>
-                )}
+                <div className={styles.libraryMeta}>
+                  <span>Reaction library</span>
+                  <strong>Available</strong>
+                </div>
               </div>
-            );
-          })}
-        </div>
+            ))}
+          </div>
+        )}
       </main>
     </div>
   );
