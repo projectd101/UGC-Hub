@@ -3,10 +3,26 @@ import { supabase } from "../supabaseClient";
 import { useAuth } from "../lib/AuthContext";
 import styles from "./Dashboard.module.css";
 
+function CreatorSkeleton() {
+  return (
+    <div className={styles.creatorCard} aria-hidden="true">
+      <div className={styles.skeletonLine} />
+      <div className={`${styles.skeletonLine} ${styles.skeletonLineWide}`} />
+      <div className={styles.skeletonPills}>
+        <span /><span /><span />
+      </div>
+      <div className={styles.skeletonMeta}>
+        <span />
+        <span />
+      </div>
+      <div className={styles.skeletonButton} />
+    </div>
+  );
+}
+
 export default function CreatorDashboard() {
   const { user, signOut } = useAuth();
   const [creator, setCreator] = useState(null);
-  const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -17,12 +33,6 @@ export default function CreatorDashboard() {
         .eq("user_id", user.id)
         .maybeSingle();
       setCreator(creatorRow);
-
-      const { data: reqs } = await supabase
-        .from("requests")
-        .select("*")
-        .order("created_at", { ascending: false });
-      setRequests(reqs || []);
       setLoading(false);
     }
     load();
@@ -31,7 +41,10 @@ export default function CreatorDashboard() {
   return (
     <div className={styles.wrap}>
       <header className={styles.header}>
-        <span className={styles.logo}>UGC Hub</span>
+        <a href="/" className={`${styles.logo} ugcBrandMark`} aria-label="UGC Hub home">
+          <span className="ugcBrandMark__ugc">UGC</span>
+          <span className="ugcBrandMark__hub">Hub</span>
+        </a>
         <button className={styles.signOut} onClick={signOut}>
           Sign out
         </button>
@@ -42,45 +55,55 @@ export default function CreatorDashboard() {
           <div className={styles.profileSummary}>
             <div>
               <h1 className={styles.title}>{creator.display_name}</h1>
-              <p className={styles.subtitle}>Your profile is live to founders.</p>
+              <p className={styles.subtitle}>Your creator library is live to founders.</p>
             </div>
             <span className={styles.activeBadge}>Active</span>
           </div>
         )}
 
-        <h2 className={styles.sectionTitle}>Open requests</h2>
+        <h2 className={styles.sectionTitle}>Your creator library</h2>
 
-        {loading && <p className={styles.dim}>Loading…</p>}
-
-        {!loading && requests.length === 0 && (
-          <p className={styles.dim}>
-            No open requests yet. Founders will post here once they're
-            live — check back soon.
-          </p>
+        {loading && (
+          <div className={styles.grid} aria-label="Loading creator library">
+            <CreatorSkeleton />
+            <CreatorSkeleton />
+            <CreatorSkeleton />
+          </div>
         )}
 
-        <div className={styles.grid}>
-          {requests.map((r) => (
-            <div key={r.id} className={styles.requestCard}>
-              <h3>{r.title}</h3>
-              {r.description && <p className={styles.bio}>{r.description}</p>}
-              {r.reactions_needed?.length > 0 && (
+        {!loading && !creator && (
+          <div className={styles.emptyCreatorState}>
+            <strong>Creator profile not found</strong>
+            <span>Your creator account details will appear here once your profile is active.</span>
+          </div>
+        )}
+
+        {!loading && creator && (
+          <div className={styles.grid}>
+            <div className={styles.creatorCard}>
+              <h3>{creator.display_name}</h3>
+              {creator.bio && <p className={styles.bio}>{creator.bio}</p>}
+              {creator.reactions?.length > 0 && (
                 <div className={styles.pillRow}>
-                  {r.reactions_needed.map((rx) => (
-                    <span key={rx} className={styles.pill}>
-                      {rx}
-                    </span>
+                  {creator.reactions.map((reaction) => (
+                    <span key={reaction} className={styles.pill}>{reaction}</span>
                   ))}
                 </div>
               )}
-              {r.budget_cents && (
-                <p className={styles.budget}>
-                  Budget: ${(r.budget_cents / 100).toFixed(0)}
-                </p>
+              {creator.niches?.length > 0 && (
+                <div className={styles.pillRow}>
+                  {creator.niches.map((niche) => (
+                    <span key={niche} className={`${styles.pill} ${styles.pillViolet}`}>{niche}</span>
+                  ))}
+                </div>
               )}
+              <div className={styles.libraryMeta}>
+                <span>Founder visibility</span>
+                <strong>Active</strong>
+              </div>
             </div>
-          ))}
-        </div>
+          </div>
+        )}
       </main>
     </div>
   );
