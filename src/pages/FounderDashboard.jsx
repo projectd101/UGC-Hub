@@ -28,24 +28,58 @@ function CreatorSkeleton() {
   );
 }
 
+function formatPrice(cents) {
+  return `$${(cents / 100).toFixed(2)}`;
+}
+
+const UNLOCK_PRICE_CENTS = 500; // $5 flat to unlock a creator's contact — dummy payment for now
+
 export default function FounderDashboard() {
   const { signOut, user, profile } = useAuth();
+  const [view, setView] = useState("creators"); // "creators" | "bundles"
   const [creators, setCreators] = useState([]);
+  const [bundles, setBundles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [activePanel, setActivePanel] = useState(null);
+  const [unlockedContacts, setUnlockedContacts] = useState({}); // { [creatorId]: contactHandle }
+  const [unlockingId, setUnlockingId] = useState(null);
+  const [unlockError, setUnlockError] = useState(null);
 
   useEffect(() => {
-    supabase
-      .from("creators_public")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .then(({ data }) => {
-        setCreators(data || []);
-        setLoading(false);
-      });
+    Promise.all([
+      supabase.from("creators_public").select("*").order("created_at", { ascending: false }),
+      supabase.from("bundles_public").select("*").order("created_at", { ascending: false }),
+    ]).then(([creatorsRes, bundlesRes]) => {
+      setCreators(creatorsRes.data || []);
+      setBundles(bundlesRes.data || []);
+      setLoading(false);
+    });
   }, []);
+
+  async function handleUnlock(creatorId) {
+    setUnlockingId(creatorId);
+    setUnlockError(null);
+
+    const { error: rpcError } = await supabase.rpc("fake_unlock_creator", {
+      p_creator_id: creatorId,
+      p_amount_cents: UNLOCK_PRICE_CENTS,
+    });
+
+    if (rpcError) {
+      setUnlockError("Couldn't unlock this creator. Please try again.");
+      setUnlockingId(null);
+      return;
+    }
+
+    const { data: contact } = await supabase.rpc("get_creator_contact", {
+      p_creator_id: creatorId,
+    });
+
+    setUnlockedContacts((current) => ({ ...current, [creatorId]: contact || "No contact info on file" }));
+    setUnlockingId(null);
+  }
 
   function openMenu(panel = null) {
     setNotificationsOpen(false);
@@ -150,10 +184,15 @@ export default function FounderDashboard() {
 
       <main className={styles.main}>
         <h1 className={styles.title}>Browse creators</h1>
-        <p className={styles.subtitle}>Browse creator reaction libraries. Once creators are active, their available content will appear here — no founder-side unlocks or payments.</p>
+        <p className={styles.subtitle}>Browse creator reaction libraries and ready-to-buy bundles. Payments aren't connected yet — this is a preview of what's available.</p>
+
+        <nav className={styles.creatorTabs} aria-label="Browse view">
+          <button className={view === "creators" ? styles.creatorTabActive : styles.creatorTab} onClick={() => setView("creators")}>Creators <b>{creators.length}</b></button>
+          <button className={view === "bundles" ? styles.creatorTabActive : styles.creatorTab} onClick={() => setView("bundles")}>Bundles <b>{bundles.length}</b></button>
+        </nav>
 
         {loading && (
-          <div className={styles.grid} aria-label="Loading creators">
+          <div className={styles.grid} aria-label="Loading">
             <CreatorSkeleton />
             <CreatorSkeleton />
             <CreatorSkeleton />
@@ -161,7 +200,7 @@ export default function FounderDashboard() {
           </div>
         )}
 
-        {!loading && creators.length === 0 && (
+        {!loading && view === "creators" && creators.length === 0 && (
           <div className={styles.emptyCreatorState}>
             <div className={styles.emptyCreatorIcon} />
             <strong>No creator libraries yet</strong>
@@ -169,7 +208,7 @@ export default function FounderDashboard() {
           </div>
         )}
 
-        {!loading && creators.length > 0 && (
+        {!loading && view === "creators" && creators.length > 0 && (
           <div className={styles.grid}>
             {creators.map((c) => (
               <div key={c.id} className={styles.creatorCard}>
@@ -180,6 +219,45 @@ export default function FounderDashboard() {
                 <div className={styles.libraryMeta}>
                   <span>Reaction library</span>
                   <strong>Available</strong>
+                </div>
+                {unlockedContacts[c.id] ? (
+                  <div className={styles.libraryMeta}>
+                    <span>Contact</span>
+                    <strong>{unlockedContacts[c.id]}</strong>
+                  </div>
+                ) : (
+                  <button
+                    className={styles.primaryAction}
+                    onClick={() => handleUnlock(c.id)}
+                    disabled={unlockingId === c.id}
+                  >
+                    {unlockingId === c.id ? "Unlocking…" : `Unlock contact · ${formatPrice(UNLOCK_PRICE_CENTS)}`}
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+        {unlockError && <p style={{ color: "#c43f50", fontSize: 12.5, marginTop: 12 }}>{unlockError}</p>}
+
+        {!loading && view === "bundles" && bundles.length === 0 && (
+          <div className={styles.emptyCreatorState}>
+            <div className={styles.emptyCreatorIcon} />
+            <strong>No bundles published yet</strong>
+            <span>Bundles will appear here once creators publish a priced clip package.</span>
+          </div>
+        )}
+
+        {!loading && view === "bundles" && bundles.length > 0 && (
+          <div className={styles.grid}>
+            {bundles.map((b) => (
+              <div key={b.id} className={styles.creatorCard}>
+                <h3>{b.name}</h3>
+                <p className={styles.bio}>by {b.creator_display_name}</p>
+                {b.description && <p className={styles.bio}>{b.description}</p>}
+                <div className={styles.libraryMeta}>
+                  <span>{b.video_count} clips</span>
+                  <strong>{formatPrice(b.price_cents)}</strong>
                 </div>
               </div>
             ))}
