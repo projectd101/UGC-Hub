@@ -13,8 +13,10 @@ function UploadIcon() { return <span className={styles.featureIcon} aria-hidden=
 function LibraryIcon() { return <span className={styles.featureIcon} aria-hidden="true">▦</span>; }
 function BundleIcon() { return <span className={styles.featureIcon} aria-hidden="true">◈</span>; }
 
-function readLocal(key, fallback) {
-  try { return JSON.parse(localStorage.getItem(key) || "null") ?? fallback; } catch { return fallback; }
+const VIDEO_BUCKET = "creator-videos";
+
+function formatPrice(cents) {
+  return `$${(cents / 100).toFixed(2)}`;
 }
 
 export default function CreatorDashboard() {
@@ -26,38 +28,97 @@ export default function CreatorDashboard() {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [walletOpen, setWalletOpen] = useState(false);
   const [activePanel, setActivePanel] = useState(null);
-  const [videos, setVideos] = useState(() => readLocal("ugc-hub-creator-videos", []));
-  const [libraries, setLibraries] = useState(() => readLocal("ugc-hub-creator-libraries", []));
-  const [bundles, setBundles] = useState(() => readLocal("ugc-hub-creator-bundles", []));
+
+  const [videos, setVideos] = useState([]);
+  const [libraries, setLibraries] = useState([]);
+  const [libraryVideoIds, setLibraryVideoIds] = useState({}); // { [libraryId]: string[] }
+  const [bundles, setBundles] = useState([]);
+  const [pricePerClipCents, setPricePerClipCents] = useState(40);
+
   const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState(null);
   const [selectedEmotion, setSelectedEmotion] = useState("Happy");
   const [selectedNiche, setSelectedNiche] = useState("Reaction");
   const [libraryName, setLibraryName] = useState("");
   const [libraryDescription, setLibraryDescription] = useState("");
   const [bundleName, setBundleName] = useState("");
   const [bundleDescription, setBundleDescription] = useState("");
-  const [bundlePrice, setBundlePrice] = useState("40");
   const [bundleLibrary, setBundleLibrary] = useState("");
   const fileInput = useRef(null);
 
+  // Load creator row + all their content on mount.
   useEffect(() => {
+    let cancelled = false;
+
     async function load() {
-      const { data: creatorRow } = await supabase.from("creators").select("*").eq("user_id", user.id).maybeSingle();
+      const { data: creatorRow } = await supabase
+        .from("creators")
+        .select("*")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (cancelled) return;
       setCreator(creatorRow);
+
+      if (!creatorRow) {
+        setLoading(false);
+        return;
+      }
+
+      const [videosRes, librariesRes, bundlesRes, settingsRes] = await Promise.all([
+        supabase.from("videos").select("*").eq("creator_id", creatorRow.id).order("created_at", { ascending: false }),
+        supabase.from("libraries").select("*").eq("creator_id", creatorRow.id).order("created_at", { ascending: false }),
+        supabase.from("bundles").select("*").eq("creator_id", creatorRow.id).order("created_at", { ascending: false }),
+        supabase.from("platform_settings").select("price_per_clip_cents").eq("id", true).maybeSingle(),
+      ]);
+
+      if (cancelled) return;
+
+      const loadedVideos = videosRes.data || [];
+      setVideos(await attachPreviewUrls(loadedVideos));
+      setLibraries(librariesRes.data || []);
+      setBundles(bundlesRes.data || []);
+      if (settingsRes.data) setPricePerClipCents(settingsRes.data.price_per_clip_cents);
+
+      const libraryIds = (librariesRes.data || []).map((l) => l.id);
+      if (libraryIds.length) {
+        const { data: lv } = await supabase
+          .from("library_videos")
+          .select("library_id, video_id")
+          .in("library_id", libraryIds);
+        if (!cancelled) {
+          const grouped = {};
+          for (const row of lv || []) {
+            (grouped[row.library_id] ||= []).push(row.video_id);
+          }
+          setLibraryVideoIds(grouped);
+        }
+      }
+
       setLoading(false);
     }
+
     load();
+    return () => { cancelled = true; };
   }, [user.id]);
 
-  useEffect(() => localStorage.setItem("ugc-hub-creator-videos", JSON.stringify(videos.map(({ previewUrl, ...video }) => video))), [videos]);
-  useEffect(() => localStorage.setItem("ugc-hub-creator-libraries", JSON.stringify(libraries)), [libraries]);
-  useEffect(() => localStorage.setItem("ugc-hub-creator-bundles", JSON.stringify(bundles)), [bundles]);
+  // Signed URLs for a creator's own (private) files, so they can preview them in-studio.
+  async function attachPreviewUrls(videoRows) {
+    const withUrls = await Promise.all(
+      videoRows.map(async (v) => {
+        const { data } = await supabase.storage
+          .from(VIDEO_BUCKET)
+          .createSignedUrl(v.storage_path, 3600);
+        return { ...v, previewUrl: data?.signedUrl || null };
+      })
+    );
+    return withUrls;
+  }
 
   const stats = useMemo(() => ({
     videos: videos.length,
     libraries: libraries.length,
     bundles: bundles.length,
-    published: videos.filter((video) => video.status === "Published").length,
+    published: videos.filter((video) => video.status === "published").length,
   }), [videos, libraries, bundles]);
 
   function closePanels() { setDrawerOpen(false); setNotificationsOpen(false); setWalletOpen(false); setActivePanel(null); }
@@ -67,50 +128,172 @@ export default function CreatorDashboard() {
   }
   function goTo(nextTab) { closePanels(); setTab(nextTab); window.scrollTo({ top: 0, behavior: "smooth" }); }
 
-  function handleFiles(fileList) {
+  async function handleFiles(fileList) {
     const files = Array.from(fileList || []).filter((file) => file.type.startsWith("video/"));
-    if (!files.length) return;
+    if (!files.length || !creator) return;
+
     setUploading(true);
-    const next = files.map((file, index) => ({
-      id: `${Date.now()}-${index}-${Math.random().toString(36).slice(2, 7)}`,
-      name: file.name.replace(/\.[^.]+$/, ""),
-      filename: file.name,
-      size: file.size,
-      emotion: selectedEmotion,
-      niche: selectedNiche,
-      status: "Draft",
-      previewUrl: URL.createObjectURL(file),
-      createdAt: new Date().toISOString(),
-    }));
-    setVideos((current) => [...next, ...current]);
+    setUploadError(null);
+
+    const uploaded = [];
+    for (const file of files) {
+      const ext = file.name.split(".").pop();
+      const path = `${creator.id}/${crypto.randomUUID()}.${ext}`;
+
+      const { error: uploadErr } = await supabase.storage.from(VIDEO_BUCKET).upload(path, file, {
+        contentType: file.type,
+        upsert: false,
+      });
+      if (uploadErr) {
+        setUploadError(`Failed to upload ${file.name}: ${uploadErr.message}`);
+        continue;
+      }
+
+      const { data: row, error: insertErr } = await supabase
+        .from("videos")
+        .insert({
+          creator_id: creator.id,
+          storage_path: path,
+          filename: file.name,
+          name: file.name.replace(/\.[^.]+$/, ""),
+          size_bytes: file.size,
+          emotion: selectedEmotion,
+          niche: selectedNiche,
+        })
+        .select()
+        .single();
+
+      if (insertErr) {
+        setUploadError(`Uploaded ${file.name} but failed to save it: ${insertErr.message}`);
+        await supabase.storage.from(VIDEO_BUCKET).remove([path]);
+        continue;
+      }
+
+      const { data: signed } = await supabase.storage.from(VIDEO_BUCKET).createSignedUrl(path, 3600);
+      uploaded.push({ ...row, previewUrl: signed?.signedUrl || null });
+    }
+
+    if (uploaded.length) {
+      setVideos((current) => [...uploaded, ...current]);
+      setTab("videos");
+    }
     setUploading(false);
-    setTab("videos");
   }
 
-  function removeVideo(id) {
-    setVideos((current) => current.filter((video) => video.id !== id));
-    setLibraries((current) => current.map((library) => ({ ...library, videoIds: library.videoIds.filter((videoId) => videoId !== id) })));
+  async function removeVideo(id) {
+    const video = videos.find((v) => v.id === id);
+    if (!video) return;
+    const confirmed = window.confirm(`Remove "${video.name}"? This can't be undone.`);
+    if (!confirmed) return;
+
+    const { error } = await supabase.from("videos").delete().eq("id", id);
+    if (error) {
+      window.alert(`Couldn't remove video: ${error.message}`);
+      return;
+    }
+    await supabase.storage.from(VIDEO_BUCKET).remove([video.storage_path]);
+    setVideos((current) => current.filter((v) => v.id !== id));
+    setLibraryVideoIds((current) => {
+      const next = {};
+      for (const [libId, ids] of Object.entries(current)) next[libId] = ids.filter((vid) => vid !== id);
+      return next;
+    });
   }
 
-  function createLibrary(event) {
+  async function createLibrary(event) {
     event.preventDefault();
-    if (!libraryName.trim()) return;
-    const library = { id: `lib-${Date.now()}`, name: libraryName.trim(), description: libraryDescription.trim(), videoIds: videos.map((video) => video.id), status: "Draft", createdAt: new Date().toISOString() };
+    if (!libraryName.trim() || !creator) return;
+
+    const { data: library, error } = await supabase
+      .from("libraries")
+      .insert({ creator_id: creator.id, name: libraryName.trim(), description: libraryDescription.trim() || null })
+      .select()
+      .single();
+
+    if (error) {
+      window.alert(`Couldn't create library: ${error.message}`);
+      return;
+    }
+
+    // New library starts with all current videos, mirroring prior behavior.
+    if (videos.length) {
+      const rows = videos.map((v) => ({ library_id: library.id, video_id: v.id }));
+      await supabase.from("library_videos").insert(rows);
+      setLibraryVideoIds((current) => ({ ...current, [library.id]: videos.map((v) => v.id) }));
+    } else {
+      setLibraryVideoIds((current) => ({ ...current, [library.id]: [] }));
+    }
+
     setLibraries((current) => [library, ...current]);
-    setLibraryName(""); setLibraryDescription(""); setTab("libraries");
+    setLibraryName("");
+    setLibraryDescription("");
+    setTab("libraries");
   }
 
-  function createBundle(event) {
+  async function createBundle(event) {
     event.preventDefault();
-    if (!bundleName.trim()) return;
-    const library = libraries.find((item) => item.id === bundleLibrary);
-    const bundle = { id: `bundle-${Date.now()}`, name: bundleName.trim(), description: bundleDescription.trim(), price: Number(bundlePrice) || 0, libraryId: library?.id || null, libraryName: library?.name || "All creator videos", videoCount: library ? library.videoIds.length : videos.length, status: "Draft", createdAt: new Date().toISOString() };
+    if (!bundleName.trim() || !creator) return;
+
+    const library = libraries.find((item) => item.id === bundleLibrary) || null;
+
+    // video_count / price_cents are recomputed server-side by a trigger;
+    // the values sent here are placeholders that the DB will overwrite.
+    const { data: bundle, error } = await supabase
+      .from("bundles")
+      .insert({
+        creator_id: creator.id,
+        library_id: library?.id || null,
+        name: bundleName.trim(),
+        description: bundleDescription.trim() || null,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      window.alert(`Couldn't create bundle: ${error.message}`);
+      return;
+    }
+
     setBundles((current) => [bundle, ...current]);
-    setBundleName(""); setBundleDescription(""); setBundlePrice("40"); setBundleLibrary(""); setTab("bundles");
+    setBundleName("");
+    setBundleDescription("");
+    setBundleLibrary("");
+    setTab("bundles");
   }
 
-  function togglePublished(setter, id) {
-    setter((items) => items.map((item) => item.id === id ? { ...item, status: item.status === "Published" ? "Draft" : "Published" } : item));
+  async function toggleVideoPublished(video) {
+    const nextStatus = video.status === "published" ? "draft" : "published";
+    const { error } = await supabase.from("videos").update({ status: nextStatus }).eq("id", video.id);
+    if (error) return window.alert(`Couldn't update video: ${error.message}`);
+    setVideos((current) => current.map((v) => (v.id === video.id ? { ...v, status: nextStatus } : v)));
+  }
+
+  async function toggleLibraryPublished(library) {
+    const nextStatus = library.status === "published" ? "draft" : "published";
+    const { error } = await supabase.from("libraries").update({ status: nextStatus }).eq("id", library.id);
+    if (error) return window.alert(`Couldn't update library: ${error.message}`);
+    setLibraries((current) => current.map((l) => (l.id === library.id ? { ...l, status: nextStatus } : l)));
+  }
+
+  async function toggleBundlePublished(bundle) {
+    const nextStatus = bundle.status === "published" ? "draft" : "published";
+    const { error } = await supabase.from("bundles").update({ status: nextStatus }).eq("id", bundle.id);
+    if (error) return window.alert(`Couldn't update bundle: ${error.message}`);
+    setBundles((current) => current.map((b) => (b.id === bundle.id ? { ...b, status: nextStatus } : b)));
+  }
+
+  const previewBundlePrice = useMemo(() => {
+    const library = libraries.find((item) => item.id === bundleLibrary);
+    const count = library ? (libraryVideoIds[library.id]?.length || 0) : videos.length;
+    return { count, priceCents: count * pricePerClipCents };
+  }, [bundleLibrary, libraries, libraryVideoIds, videos.length, pricePerClipCents]);
+
+  if (loading) {
+    return <div className={styles.wrap}><main className={styles.main}><p className={styles.subtitle}>Loading your studio…</p></main></div>;
+  }
+
+  if (!creator) {
+    return <div className={styles.wrap}><main className={styles.main}><p className={styles.subtitle}>We couldn't find your creator profile. Try signing out and back in.</p></main></div>;
   }
 
   return (
@@ -147,27 +330,28 @@ export default function CreatorDashboard() {
 
         {tab === "overview" && <section className={styles.studioSection}>
           <div className={styles.statsGrid}><div className={styles.statCard}><span>Videos</span><strong>{stats.videos}</strong><small>{stats.published} published</small></div><div className={styles.statCard}><span>Libraries</span><strong>{stats.libraries}</strong><small>Curated collections</small></div><div className={styles.statCard}><span>Bundles</span><strong>{stats.bundles}</strong><small>Ready to sell</small></div><div className={styles.statCard}><span>Wallet</span><strong>$0</strong><small>Available balance</small></div></div>
-          <div className={styles.featureGrid}><button className={styles.featureCard} onClick={() => goTo("videos")}><UploadIcon /><span><strong>Upload videos</strong><small>Add reaction clips and tag each one by emotion and niche.</small></span><b>→</b></button><button className={styles.featureCard} onClick={() => goTo("libraries")}><LibraryIcon /><span><strong>Build a library</strong><small>Group videos into a creator library founders can browse.</small></span><b>→</b></button><button className={styles.featureCard} onClick={() => goTo("bundles")}><BundleIcon /><span><strong>Make a bundle</strong><small>Package a library into a paid clip collection with a clear price.</small></span><b>→</b></button></div>
+          <div className={styles.featureGrid}><button className={styles.featureCard} onClick={() => goTo("videos")}><UploadIcon /><span><strong>Upload videos</strong><small>Add reaction clips and tag each one by emotion and niche.</small></span><b>→</b></button><button className={styles.featureCard} onClick={() => goTo("libraries")}><LibraryIcon /><span><strong>Build a library</strong><small>Group videos into a creator library founders can browse.</small></span><b>→</b></button><button className={styles.featureCard} onClick={() => goTo("bundles")}><BundleIcon /><span><strong>Make a bundle</strong><small>Package a library into a paid clip collection, priced at {formatPrice(pricePerClipCents)}/clip.</small></span><b>→</b></button></div>
           <div className={styles.studioCallout}><div><span className={styles.panelEyebrow}>Creator workflow</span><h2>Build once. Sell repeatedly.</h2><p>Keep individual clips organized, assemble them into libraries, then turn those libraries into bundles for founders.</p></div><button className={styles.walletAction} onClick={() => goTo("videos")}>Start uploading</button></div>
         </section>}
 
         {tab === "videos" && <section className={styles.studioSection}>
-          <div className={styles.sectionHeading}><div><h2>Videos</h2><p>Your individual reaction clips. Add metadata now so they can be organized into libraries and bundles later.</p></div><button className={styles.primaryAction} onClick={() => fileInput.current?.click()}><UploadIcon /> Upload videos</button></div>
+          <div className={styles.sectionHeading}><div><h2>Videos</h2><p>Your individual reaction clips. Add metadata now so they can be organized into libraries and bundles later.</p></div><button className={styles.primaryAction} onClick={() => fileInput.current?.click()} disabled={uploading}><UploadIcon /> {uploading ? "Uploading…" : "Upload videos"}</button></div>
           <div className={styles.uploadControls}><label>Emotion<select value={selectedEmotion} onChange={(e) => setSelectedEmotion(e.target.value)}>{EMOTIONS.map((item) => <option key={item}>{item}</option>)}</select></label><label>Niche<select value={selectedNiche} onChange={(e) => setSelectedNiche(e.target.value)}>{NICHES.map((item) => <option key={item}>{item}</option>)}</select></label><input ref={fileInput} hidden type="file" accept="video/*" multiple onChange={(e) => { handleFiles(e.target.files); e.target.value = ""; }} /></div>
-          <button className={styles.dropzone} onClick={() => fileInput.current?.click()}><span className={styles.dropzoneIcon}>↑</span><strong>{uploading ? "Adding videos…" : "Drop videos here or click to upload"}</strong><small>MP4, MOV, WebM · 9:16 reaction clips recommended</small></button>
-          {!videos.length ? <div className={styles.emptyCreatorState}><strong>No videos yet</strong><span>Upload your first reaction clips to start building your library.</span></div> : <div className={styles.videoGrid}>{videos.map((video) => <article key={video.id} className={styles.videoCard}>{video.previewUrl ? <video src={video.previewUrl} muted controls playsInline /> : <div className={styles.videoPlaceholder}>Video</div>}<div className={styles.videoCardBody}><div className={styles.videoCardTop}><div><h3>{video.name}</h3><span>{video.filename}</span></div><button className={styles.moreButton} onClick={() => removeVideo(video.id)} aria-label={`Remove ${video.name}`}>×</button></div><div className={styles.pillRow}><span className={styles.pill}>{video.emotion}</span><span className={`${styles.pill} ${styles.pillViolet}`}>{video.niche}</span></div><div className={styles.videoMeta}><span>{video.status}</span><button onClick={() => togglePublished(setVideos, video.id)}>{video.status === "Published" ? "Unpublish" : "Publish"}</button></div></div></article>)}</div>}
+          {uploadError && <p style={{ color: "#c43f50", fontSize: 12.5 }}>{uploadError}</p>}
+          <button className={styles.dropzone} onClick={() => fileInput.current?.click()} disabled={uploading}><span className={styles.dropzoneIcon}>↑</span><strong>{uploading ? "Uploading videos…" : "Drop videos here or click to upload"}</strong><small>MP4, MOV, WebM · 9:16 reaction clips recommended</small></button>
+          {!videos.length ? <div className={styles.emptyCreatorState}><strong>No videos yet</strong><span>Upload your first reaction clips to start building your library.</span></div> : <div className={styles.videoGrid}>{videos.map((video) => <article key={video.id} className={styles.videoCard}>{video.previewUrl ? <video src={video.previewUrl} muted controls playsInline /> : <div className={styles.videoPlaceholder}>Video</div>}<div className={styles.videoCardBody}><div className={styles.videoCardTop}><div><h3>{video.name}</h3><span>{video.filename}</span></div><button className={styles.moreButton} onClick={() => removeVideo(video.id)} aria-label={`Remove ${video.name}`}>×</button></div><div className={styles.pillRow}><span className={styles.pill}>{video.emotion}</span><span className={`${styles.pill} ${styles.pillViolet}`}>{video.niche}</span></div><div className={styles.videoMeta}><span>{video.status === "published" ? "Published" : "Draft"}</span><button onClick={() => toggleVideoPublished(video)}>{video.status === "published" ? "Unpublish" : "Publish"}</button></div></div></article>)}</div>}
         </section>}
 
         {tab === "libraries" && <section className={styles.studioSection}>
           <div className={styles.sectionHeading}><div><h2>Libraries</h2><p>Create collections of videos around a face, emotion set, niche, campaign, or use case.</p></div></div>
           <form className={styles.creatorForm} onSubmit={createLibrary}><div className={styles.formGrid}><label>Library name<input value={libraryName} onChange={(e) => setLibraryName(e.target.value)} placeholder="e.g. Alex — Core Reactions" /></label><label>Description<input value={libraryDescription} onChange={(e) => setLibraryDescription(e.target.value)} placeholder="Short description for founders" /></label></div><div className={styles.formFooter}><span>{videos.length} videos currently available to add</span><button className={styles.primaryAction} type="submit">Create library</button></div></form>
-          {!libraries.length ? <div className={styles.emptyCreatorState}><strong>No libraries yet</strong><span>Create your first library and it will become the structure you use to package your content.</span></div> : <div className={styles.libraryGrid}>{libraries.map((library) => <article className={styles.libraryCard} key={library.id}><div className={styles.libraryCardTop}><span className={styles.libraryMark}>▦</span><span className={library.status === "Published" ? styles.publishedBadge : styles.draftBadge}>{library.status}</span></div><h3>{library.name}</h3><p>{library.description || "No description yet."}</p><div className={styles.libraryMeta}><span>{library.videoIds.length} videos</span><button onClick={() => togglePublished(setLibraries, library.id)}>{library.status === "Published" ? "Unpublish" : "Publish"}</button></div></article>)}</div>}
+          {!libraries.length ? <div className={styles.emptyCreatorState}><strong>No libraries yet</strong><span>Create your first library and it will become the structure you use to package your content.</span></div> : <div className={styles.libraryGrid}>{libraries.map((library) => <article className={styles.libraryCard} key={library.id}><div className={styles.libraryCardTop}><span className={styles.libraryMark}>▦</span><span className={library.status === "published" ? styles.publishedBadge : styles.draftBadge}>{library.status === "published" ? "Published" : "Draft"}</span></div><h3>{library.name}</h3><p>{library.description || "No description yet."}</p><div className={styles.libraryMeta}><span>{libraryVideoIds[library.id]?.length || 0} videos</span><button onClick={() => toggleLibraryPublished(library)}>{library.status === "published" ? "Unpublish" : "Publish"}</button></div></article>)}</div>}
         </section>}
 
         {tab === "bundles" && <section className={styles.studioSection}>
-          <div className={styles.sectionHeading}><div><h2>Bundles</h2><p>Turn a library into a product founders can buy. Set the package name, contents and price.</p></div></div>
-          <form className={styles.creatorForm} onSubmit={createBundle}><div className={styles.formGrid}><label>Bundle name<input value={bundleName} onChange={(e) => setBundleName(e.target.value)} placeholder="e.g. 100 Reaction Clips" /></label><label>Price (USD)<input type="number" min="0" step="1" value={bundlePrice} onChange={(e) => setBundlePrice(e.target.value)} /></label></div><label>Description<input value={bundleDescription} onChange={(e) => setBundleDescription(e.target.value)} placeholder="What founders get in this bundle" /></label><label>Source library<select value={bundleLibrary} onChange={(e) => setBundleLibrary(e.target.value)}><option value="">All creator videos</option>{libraries.map((library) => <option key={library.id} value={library.id}>{library.name} · {library.videoIds.length} videos</option>)}</select></label><div className={styles.formFooter}><span>{bundleLibrary ? `${libraries.find((item) => item.id === bundleLibrary)?.videoIds.length || 0} videos included` : `${videos.length} videos included`}</span><button className={styles.primaryAction} type="submit">Create bundle</button></div></form>
-          {!bundles.length ? <div className={styles.emptyCreatorState}><strong>No bundles yet</strong><span>Create a bundle after you have videos or libraries ready.</span></div> : <div className={styles.bundleGrid}>{bundles.map((bundle) => <article className={styles.bundleCard} key={bundle.id}><div className={styles.bundleTop}><span className={bundle.status === "Published" ? styles.publishedBadge : styles.draftBadge}>{bundle.status}</span><strong>${bundle.price}</strong></div><h3>{bundle.name}</h3><p>{bundle.description || "No description yet."}</p><div className={styles.bundleMeta}><span>{bundle.videoCount} videos · {bundle.libraryName}</span><button onClick={() => togglePublished(setBundles, bundle.id)}>{bundle.status === "Published" ? "Unpublish" : "Publish"}</button></div></article>)}</div>}
+          <div className={styles.sectionHeading}><div><h2>Bundles</h2><p>Turn a library into a product founders can buy, priced automatically at {formatPrice(pricePerClipCents)} per clip.</p></div></div>
+          <form className={styles.creatorForm} onSubmit={createBundle}><div className={styles.formGrid}><label>Bundle name<input value={bundleName} onChange={(e) => setBundleName(e.target.value)} placeholder="e.g. 100 Reaction Clips" /></label><label>Source library<select value={bundleLibrary} onChange={(e) => setBundleLibrary(e.target.value)}><option value="">All creator videos</option>{libraries.map((library) => <option key={library.id} value={library.id}>{library.name} · {libraryVideoIds[library.id]?.length || 0} videos</option>)}</select></label></div><label>Description<input value={bundleDescription} onChange={(e) => setBundleDescription(e.target.value)} placeholder="What founders get in this bundle" /></label><div className={styles.formFooter}><span>{previewBundlePrice.count} videos included · {formatPrice(previewBundlePrice.priceCents)} at ${(pricePerClipCents / 100).toFixed(2)}/clip</span><button className={styles.primaryAction} type="submit">Create bundle</button></div></form>
+          {!bundles.length ? <div className={styles.emptyCreatorState}><strong>No bundles yet</strong><span>Create a bundle after you have videos or libraries ready.</span></div> : <div className={styles.bundleGrid}>{bundles.map((bundle) => <article className={styles.bundleCard} key={bundle.id}><div className={styles.bundleTop}><span className={bundle.status === "published" ? styles.publishedBadge : styles.draftBadge}>{bundle.status === "published" ? "Published" : "Draft"}</span><strong>{formatPrice(bundle.price_cents)}</strong></div><h3>{bundle.name}</h3><p>{bundle.description || "No description yet."}</p><div className={styles.bundleMeta}><span>{bundle.video_count} videos · {libraries.find((l) => l.id === bundle.library_id)?.name || "All creator videos"}</span><button onClick={() => toggleBundlePublished(bundle)}>{bundle.status === "published" ? "Unpublish" : "Publish"}</button></div></article>)}</div>}
         </section>}
       </main>
     </div>
