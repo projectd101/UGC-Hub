@@ -29,9 +29,9 @@ const NICHE_OPTIONS = [
 
 const PLAN_PRICE_CENTS = 1900; // $19/mo flat — dummy for now
 
-export default function CreatorOnboarding({ onDone }) {
-  const { user, refreshProfile } = useAuth();
-  const [step, setStep] = useState("profile"); // "profile" | "plan"
+export default function CreatorOnboarding() {
+  const { user } = useAuth();
+  const [step, setStep] = useState("profile"); // "profile" | "plan" | "pending"
   const [creatorId, setCreatorId] = useState(null);
 
   const [displayName, setDisplayName] = useState("");
@@ -93,25 +93,48 @@ export default function CreatorOnboarding({ onDone }) {
     setSaving(true);
     setError(null);
 
-    const { error: rpcError } = await supabase.rpc("fake_subscribe_creator", {
-      p_creator_id: creatorId,
-    });
+    const { data: sessionData } = await supabase.auth.getSession();
+    const accessToken = sessionData?.session?.access_token;
 
-    if (rpcError) {
-      setError("Couldn't activate your plan. Please try again.");
+    if (!accessToken) {
+      setError("Your session expired. Please sign in again.");
       setSaving(false);
       return;
     }
 
-    await supabase
-      .from("user_profiles")
-      .update({ onboarding_complete: true })
-      .eq("id", user.id);
+    try {
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/dodo-checkout`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify({ kind: "subscription" }),
+        }
+      );
+      const body = await res.json();
 
-    await refreshProfile();
-    setSaving(false);
-    onDone?.();
+      if (!res.ok || !body.checkout_url) {
+        setError(body.error || "Couldn't start checkout. Please try again.");
+        setSaving(false);
+        return;
+      }
+
+      // Redirect to Dodo's hosted checkout. We do NOT mark onboarding
+      // complete here — that only happens once the webhook confirms the
+      // subscription is active. Dodo's return_url brings the user back to
+      // /creator/subscribed, which App.jsx routes to a fresh PaymentPending
+      // screen (this component will have fully remounted by then).
+      window.location.href = body.checkout_url;
+    } catch {
+      setError("Couldn't reach the payment service. Please try again.");
+      setSaving(false);
+    }
   }
+
+
 
   if (step === "plan") {
     return (

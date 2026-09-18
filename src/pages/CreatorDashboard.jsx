@@ -171,6 +171,17 @@ export default function CreatorDashboard() {
 
       const { data: signed } = await supabase.storage.from(VIDEO_BUCKET).createSignedUrl(path, 3600);
       uploaded.push({ ...row, previewUrl: signed?.signedUrl || null });
+
+      // Kick off the Google Drive upload of the original in the background.
+      // Not awaited — this can take a while for larger files, and the
+      // creator's upload flow shouldn't block on it. If it fails, the video
+      // is still saved and usable; original_drive_url just stays empty
+      // until a retry (surfaced as "Drive: pending" in the UI below).
+      fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/drive-upload`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ video_id: row.id }),
+      }).catch((err) => console.error("Drive upload trigger failed:", err));
     }
 
     if (uploaded.length) {

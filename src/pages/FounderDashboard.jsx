@@ -36,9 +36,10 @@ const UNLOCK_PRICE_CENTS = 500; // $5 flat to unlock a creator's contact — dum
 
 export default function FounderDashboard() {
   const { signOut, user, profile } = useAuth();
-  const [view, setView] = useState("creators"); // "creators" | "bundles"
+  const [view, setView] = useState("creators"); // "creators" | "bundles" | "purchases"
   const [creators, setCreators] = useState([]);
   const [bundles, setBundles] = useState([]);
+  const [purchasedBundles, setPurchasedBundles] = useState([]); // [{ ...bundle, videos: [...] }]
   const [loading, setLoading] = useState(true);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
@@ -46,17 +47,99 @@ export default function FounderDashboard() {
   const [unlockedContacts, setUnlockedContacts] = useState({}); // { [creatorId]: contactHandle }
   const [unlockingId, setUnlockingId] = useState(null);
   const [unlockError, setUnlockError] = useState(null);
+  const [purchasedBundleIds, setPurchasedBundleIds] = useState(new Set());
+  const [buyingBundleId, setBuyingBundleId] = useState(null);
+  const [buyError, setBuyError] = useState(null);
 
   useEffect(() => {
     Promise.all([
       supabase.from("creators_public").select("*").order("created_at", { ascending: false }),
       supabase.from("bundles_public").select("*").order("created_at", { ascending: false }),
-    ]).then(([creatorsRes, bundlesRes]) => {
+      supabase.from("founders").select("id").eq("user_id", user.id).maybeSingle(),
+    ]).then(async ([creatorsRes, bundlesRes, founderRes]) => {
       setCreators(creatorsRes.data || []);
       setBundles(bundlesRes.data || []);
+
+      if (founderRes.data) {
+        const founderId = founderRes.data.id;
+
+        const { data: purchases } = await supabase
+          .from("bundle_purchases")
+          .select("bundle_id, created_at, bundles(id, name, description, price_cents, library_id, creator_id)")
+          .eq("founder_id", founderId)
+          .eq("status", "succeeded");
+
+        setPurchasedBundleIds(new Set((purchases || []).map((p) => p.bundle_id)));
+
+        // For each purchased bundle, fetch the videos it actually grants
+        // access to. RLS (see "founders can read videos in bundles they
+        // purchased") is what actually enforces this — this query would
+        // simply return nothing for a bundle the founder hasn't paid for.
+        const withVideos = await Promise.all(
+          (purchases || []).map(async (p) => {
+            const bundle = p.bundles;
+            if (!bundle) return null;
+
+            let videoQuery = supabase.from("videos").select("id, name, filename, original_drive_url, processing_status");
+            if (bundle.library_id) {
+              const { data: lv } = await supabase.from("library_videos").select("video_id").eq("library_id", bundle.library_id);
+              const videoIds = (lv || []).map((row) => row.video_id);
+              if (!videoIds.length) return { ...bundle, videos: [] };
+              videoQuery = videoQuery.in("id", videoIds);
+            } else {
+              videoQuery = videoQuery.eq("creator_id", bundle.creator_id);
+            }
+
+            const { data: videos } = await videoQuery;
+            return { ...bundle, videos: videos || [] };
+          })
+        );
+
+        setPurchasedBundles(withVideos.filter(Boolean));
+      }
+
       setLoading(false);
     });
-  }, []);
+  }, [user.id]);
+
+  async function handleBuyBundle(bundleId) {
+    setBuyingBundleId(bundleId);
+    setBuyError(null);
+
+    const { data: sessionData } = await supabase.auth.getSession();
+    const accessToken = sessionData?.session?.access_token;
+
+    if (!accessToken) {
+      setBuyError("Your session expired. Please sign in again.");
+      setBuyingBundleId(null);
+      return;
+    }
+
+    try {
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/dodo-checkout`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+          body: JSON.stringify({ kind: "bundle", bundle_id: bundleId }),
+        }
+      );
+      const body = await res.json();
+
+      if (!res.ok || !body.checkout_url) {
+        setBuyError(body.error || "Couldn't start checkout. Please try again.");
+        setBuyingBundleId(null);
+        return;
+      }
+
+      // Access is granted only once the webhook confirms payment — see
+      // /founder/purchased handling in App.jsx for what happens on return.
+      window.location.href = body.checkout_url;
+    } catch {
+      setBuyError("Couldn't reach the payment service. Please try again.");
+      setBuyingBundleId(null);
+    }
+  }
 
   async function handleUnlock(creatorId) {
     setUnlockingId(creatorId);
@@ -189,6 +272,7 @@ export default function FounderDashboard() {
         <nav className={styles.creatorTabs} aria-label="Browse view">
           <button className={view === "creators" ? styles.creatorTabActive : styles.creatorTab} onClick={() => setView("creators")}>Creators <b>{creators.length}</b></button>
           <button className={view === "bundles" ? styles.creatorTabActive : styles.creatorTab} onClick={() => setView("bundles")}>Bundles <b>{bundles.length}</b></button>
+          <button className={view === "purchases" ? styles.creatorTabActive : styles.creatorTab} onClick={() => setView("purchases")}>My purchases <b>{purchasedBundles.length}</b></button>
         </nav>
 
         {loading && (
@@ -258,6 +342,55 @@ export default function FounderDashboard() {
                 <div className={styles.libraryMeta}>
                   <span>{b.video_count} clips</span>
                   <strong>{formatPrice(b.price_cents)}</strong>
+                </div>
+                {purchasedBundleIds.has(b.id) ? (
+                  <div className={styles.libraryMeta}>
+                    <span>Purchased</span>
+                    <strong>Ready to download</strong>
+                  </div>
+                ) : (
+                  <button
+                    className={styles.primaryAction}
+                    onClick={() => handleBuyBundle(b.id)}
+                    disabled={buyingBundleId === b.id}
+                  >
+                    {buyingBundleId === b.id ? "Starting checkout…" : `Buy bundle · ${formatPrice(b.price_cents)}`}
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+        {buyError && <p style={{ color: "#c43f50", fontSize: 12.5, marginTop: 12 }}>{buyError}</p>}
+
+        {!loading && view === "purchases" && purchasedBundles.length === 0 && (
+          <div className={styles.emptyCreatorState}>
+            <div className={styles.emptyCreatorIcon} />
+            <strong>No purchases yet</strong>
+            <span>Bundles you buy will appear here with download links for each clip.</span>
+          </div>
+        )}
+
+        {!loading && view === "purchases" && purchasedBundles.length > 0 && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+            {purchasedBundles.map((bundle) => (
+              <div key={bundle.id} className={styles.creatorCard}>
+                <h3>{bundle.name}</h3>
+                {bundle.description && <p className={styles.bio}>{bundle.description}</p>}
+                <div className={styles.libraryMeta}><span>{bundle.videos.length} clips</span><strong>{formatPrice(bundle.price_cents)} paid</strong></div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 10 }}>
+                  {bundle.videos.map((video) => (
+                    <div key={video.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderTop: "1px solid #eee" }}>
+                      <span style={{ fontSize: 13.5 }}>{video.name}</span>
+                      {video.original_drive_url ? (
+                        <a href={video.original_drive_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 13, fontWeight: 600, color: "#6b5bff" }}>
+                          Download
+                        </a>
+                      ) : (
+                        <span style={{ fontSize: 12.5, color: "#999" }}>Preparing file…</span>
+                      )}
+                    </div>
+                  ))}
                 </div>
               </div>
             ))}
