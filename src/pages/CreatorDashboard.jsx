@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "../supabaseClient";
 import { useAuth } from "../lib/AuthContext";
+import { createWatermarkedPreview } from "../lib/watermark";
 import styles from "./Dashboard.module.css";
 
 const EMOTIONS = ["Happy", "Laughing", "Surprised", "Confused", "Excited", "Sad", "Angry", "Disgusted"];
@@ -37,6 +38,7 @@ export default function CreatorDashboard() {
 
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState(null);
+  const [uploadStatus, setUploadStatus] = useState(null);
   const [selectedEmotion, setSelectedEmotion] = useState("Happy");
   const [selectedNiche, setSelectedNiche] = useState("Reaction");
   const [libraryName, setLibraryName] = useState("");
@@ -138,9 +140,13 @@ export default function CreatorDashboard() {
     const uploaded = [];
     for (const file of files) {
       const ext = file.name.split(".").pop();
-      const path = `${creator.id}/${crypto.randomUUID()}.${ext}`;
+      const originalPath = `${creator.id}/${crypto.randomUUID()}.${ext}`;
+      const watermarkedPath = `${creator.id}/${crypto.randomUUID()}-preview.mp4`;
 
-      const { error: uploadErr } = await supabase.storage.from(VIDEO_BUCKET).upload(path, file, {
+      // 1. Upload the ORIGINAL, untouched, to the private bucket — this is
+      // what eventually goes to Drive and is what a paying founder downloads.
+      setUploadStatus(`Uploading ${file.name}…`);
+      const { error: uploadErr } = await supabase.storage.from(VIDEO_BUCKET).upload(originalPath, file, {
         contentType: file.type,
         upsert: false,
       });
@@ -149,11 +155,40 @@ export default function CreatorDashboard() {
         continue;
       }
 
+      // 2. Generate a watermarked, compressed preview IN THE BROWSER via
+      // ffmpeg.wasm. This never touches the original file or its upload —
+      // if watermarking fails, the original is still safely stored, we just
+      // skip having a preview for this clip (surfaced via processing_status).
+      let watermarkedBlob = null;
+      try {
+        watermarkedBlob = await createWatermarkedPreview(file, (status) => setUploadStatus(`${file.name}: ${status}`));
+      } catch (wmErr) {
+        console.error("Watermarking failed:", wmErr);
+        setUploadError(`Uploaded ${file.name}, but watermarking failed — it won't be visible to founders until this is retried.`);
+      }
+
+      let watermarkedStoragePath = null;
+      if (watermarkedBlob) {
+        setUploadStatus(`Uploading watermarked preview for ${file.name}…`);
+        const { error: wmUploadErr } = await supabase.storage.from(VIDEO_BUCKET).upload(watermarkedPath, watermarkedBlob, {
+          contentType: "video/mp4",
+          upsert: false,
+        });
+        if (wmUploadErr) {
+          console.error("Watermarked preview upload failed:", wmUploadErr);
+          setUploadError(`Uploaded ${file.name}, but its watermarked preview failed to save.`);
+        } else {
+          watermarkedStoragePath = watermarkedPath;
+        }
+      }
+
       const { data: row, error: insertErr } = await supabase
         .from("videos")
         .insert({
           creator_id: creator.id,
-          storage_path: path,
+          storage_path: originalPath,
+          watermarked_storage_path: watermarkedStoragePath,
+          processing_status: watermarkedStoragePath ? "ready" : "pending",
           filename: file.name,
           name: file.name.replace(/\.[^.]+$/, ""),
           size_bytes: file.size,
@@ -165,18 +200,23 @@ export default function CreatorDashboard() {
 
       if (insertErr) {
         setUploadError(`Uploaded ${file.name} but failed to save it: ${insertErr.message}`);
-        await supabase.storage.from(VIDEO_BUCKET).remove([path]);
+        await supabase.storage.from(VIDEO_BUCKET).remove([originalPath]);
+        if (watermarkedStoragePath) await supabase.storage.from(VIDEO_BUCKET).remove([watermarkedStoragePath]);
         continue;
       }
 
-      const { data: signed } = await supabase.storage.from(VIDEO_BUCKET).createSignedUrl(path, 3600);
+      // Preview shown in the creator's own studio uses the WATERMARKED
+      // version when available — this is also roughly what a founder will
+      // see, so it doubles as an at-a-glance check that watermarking worked.
+      const previewSourcePath = watermarkedStoragePath || originalPath;
+      const { data: signed } = await supabase.storage.from(VIDEO_BUCKET).createSignedUrl(previewSourcePath, 3600);
       uploaded.push({ ...row, previewUrl: signed?.signedUrl || null });
 
-      // Kick off the Google Drive upload of the original in the background.
+      // Kick off the Google Drive upload of the ORIGINAL in the background.
       // Not awaited — this can take a while for larger files, and the
       // creator's upload flow shouldn't block on it. If it fails, the video
       // is still saved and usable; original_drive_url just stays empty
-      // until a retry (surfaced as "Drive: pending" in the UI below).
+      // until a retry.
       fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/drive-upload`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -188,6 +228,7 @@ export default function CreatorDashboard() {
       setVideos((current) => [...uploaded, ...current]);
       setTab("videos");
     }
+    setUploadStatus(null);
     setUploading(false);
   }
 
@@ -202,7 +243,9 @@ export default function CreatorDashboard() {
       window.alert(`Couldn't remove video: ${error.message}`);
       return;
     }
-    await supabase.storage.from(VIDEO_BUCKET).remove([video.storage_path]);
+    const pathsToRemove = [video.storage_path];
+    if (video.watermarked_storage_path) pathsToRemove.push(video.watermarked_storage_path);
+    await supabase.storage.from(VIDEO_BUCKET).remove(pathsToRemove);
     setVideos((current) => current.filter((v) => v.id !== id));
     setLibraryVideoIds((current) => {
       const next = {};
@@ -349,8 +392,8 @@ export default function CreatorDashboard() {
           <div className={styles.sectionHeading}><div><h2>Videos</h2><p>Your individual reaction clips. Add metadata now so they can be organized into libraries and bundles later.</p></div><button className={styles.primaryAction} onClick={() => fileInput.current?.click()} disabled={uploading}><UploadIcon /> {uploading ? "Uploading…" : "Upload videos"}</button></div>
           <div className={styles.uploadControls}><label>Emotion<select value={selectedEmotion} onChange={(e) => setSelectedEmotion(e.target.value)}>{EMOTIONS.map((item) => <option key={item}>{item}</option>)}</select></label><label>Niche<select value={selectedNiche} onChange={(e) => setSelectedNiche(e.target.value)}>{NICHES.map((item) => <option key={item}>{item}</option>)}</select></label><input ref={fileInput} hidden type="file" accept="video/*" multiple onChange={(e) => { handleFiles(e.target.files); e.target.value = ""; }} /></div>
           {uploadError && <p style={{ color: "#c43f50", fontSize: 12.5 }}>{uploadError}</p>}
-          <button className={styles.dropzone} onClick={() => fileInput.current?.click()} disabled={uploading}><span className={styles.dropzoneIcon}>↑</span><strong>{uploading ? "Uploading videos…" : "Drop videos here or click to upload"}</strong><small>MP4, MOV, WebM · 9:16 reaction clips recommended</small></button>
-          {!videos.length ? <div className={styles.emptyCreatorState}><strong>No videos yet</strong><span>Upload your first reaction clips to start building your library.</span></div> : <div className={styles.videoGrid}>{videos.map((video) => <article key={video.id} className={styles.videoCard}>{video.previewUrl ? <video src={video.previewUrl} muted controls playsInline /> : <div className={styles.videoPlaceholder}>Video</div>}<div className={styles.videoCardBody}><div className={styles.videoCardTop}><div><h3>{video.name}</h3><span>{video.filename}</span></div><button className={styles.moreButton} onClick={() => removeVideo(video.id)} aria-label={`Remove ${video.name}`}>×</button></div><div className={styles.pillRow}><span className={styles.pill}>{video.emotion}</span><span className={`${styles.pill} ${styles.pillViolet}`}>{video.niche}</span></div><div className={styles.videoMeta}><span>{video.status === "published" ? "Published" : "Draft"}</span><button onClick={() => toggleVideoPublished(video)}>{video.status === "published" ? "Unpublish" : "Publish"}</button></div></div></article>)}</div>}
+          <button className={styles.dropzone} onClick={() => fileInput.current?.click()} disabled={uploading}><span className={styles.dropzoneIcon}>↑</span><strong>{uploadStatus || "Drop videos here or click to upload"}</strong><small>MP4, MOV, WebM · 9:16 reaction clips recommended · watermarking runs in your browser and may take a few seconds per clip</small></button>
+          {!videos.length ? <div className={styles.emptyCreatorState}><strong>No videos yet</strong><span>Upload your first reaction clips to start building your library.</span></div> : <div className={styles.videoGrid}>{videos.map((video) => <article key={video.id} className={styles.videoCard}>{video.previewUrl ? <video src={video.previewUrl} muted controls playsInline /> : <div className={styles.videoPlaceholder}>Video</div>}<div className={styles.videoCardBody}><div className={styles.videoCardTop}><div><h3>{video.name}</h3><span>{video.filename}</span></div><button className={styles.moreButton} onClick={() => removeVideo(video.id)} aria-label={`Remove ${video.name}`}>×</button></div><div className={styles.pillRow}><span className={styles.pill}>{video.emotion}</span><span className={`${styles.pill} ${styles.pillViolet}`}>{video.niche}</span>{video.processing_status === "pending" && <span className={styles.pill} style={{ background: "#fff3cd", color: "#8a6d00" }}>Watermark pending</span>}{video.processing_status === "failed" && <span className={styles.pill} style={{ background: "#fde2e2", color: "#c43f50" }}>Watermark failed</span>}</div><div className={styles.videoMeta}><span>{video.status === "published" ? "Published" : "Draft"}</span><button onClick={() => toggleVideoPublished(video)}>{video.status === "published" ? "Unpublish" : "Publish"}</button></div></div></article>)}</div>}
         </section>}
 
         {tab === "libraries" && <section className={styles.studioSection}>
