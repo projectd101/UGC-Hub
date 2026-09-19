@@ -32,8 +32,6 @@ function formatPrice(cents) {
   return `$${(cents / 100).toFixed(2)}`;
 }
 
-const UNLOCK_PRICE_CENTS = 500; // $5 flat to unlock a creator's contact — dummy payment for now
-
 export default function FounderDashboard() {
   const { signOut, user, profile } = useAuth();
   const [view, setView] = useState("creators"); // "creators" | "bundles" | "purchases"
@@ -44,22 +42,43 @@ export default function FounderDashboard() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [activePanel, setActivePanel] = useState(null);
-  const [unlockedContacts, setUnlockedContacts] = useState({}); // { [creatorId]: contactHandle }
-  const [unlockingId, setUnlockingId] = useState(null);
-  const [unlockError, setUnlockError] = useState(null);
   const [purchasedBundleIds, setPurchasedBundleIds] = useState(new Set());
   const [driveFolders, setDriveFolders] = useState({}); // { [bundleId]: { status, drive_folder_url } }
   const [buyingBundleId, setBuyingBundleId] = useState(null);
   const [buyError, setBuyError] = useState(null);
+  const [previewClips, setPreviewClips] = useState({}); // { [bundleId]: [{ video_id, name, emotion, niche, url }] }
 
-  useEffect(() => {
-    Promise.all([
+  function loadData() {
+    return Promise.all([
       supabase.from("creators_public").select("*").order("created_at", { ascending: false }),
       supabase.from("bundles_public").select("*").order("created_at", { ascending: false }),
       supabase.from("founders").select("id").eq("user_id", user.id).maybeSingle(),
     ]).then(async ([creatorsRes, bundlesRes, founderRes]) => {
       setCreators(creatorsRes.data || []);
       setBundles(bundlesRes.data || []);
+
+      // Watermarked previews of every clip in every published bundle. These
+      // come from a view that exposes ONLY the watermarked file path, never
+      // the clean original or any Drive field, so browsing stays free while
+      // the real files stay locked until payment.
+      const bundleIds = (bundlesRes.data || []).map((b) => b.id);
+      if (bundleIds.length) {
+        const { data: clips } = await supabase
+          .from("bundle_preview_clips")
+          .select("bundle_id, video_id, name, emotion, niche, watermarked_storage_path")
+          .in("bundle_id", bundleIds);
+        const withUrls = await Promise.all(
+          (clips || []).map(async (clip) => {
+            const { data: signed } = await supabase.storage
+              .from("creator-videos")
+              .createSignedUrl(clip.watermarked_storage_path, 3600);
+            return { ...clip, url: signed?.signedUrl || null };
+          })
+        );
+        const grouped = {};
+        for (const clip of withUrls) (grouped[clip.bundle_id] ||= []).push(clip);
+        setPreviewClips(grouped);
+      }
 
       if (founderRes.data) {
         const founderId = founderRes.data.id;
@@ -116,6 +135,10 @@ export default function FounderDashboard() {
 
       setLoading(false);
     });
+  }
+
+  useEffect(() => {
+    loadData();
   }, [user.id]);
 
   async function handleBuyBundle(bundleId) {
@@ -148,36 +171,14 @@ export default function FounderDashboard() {
         return;
       }
 
-      // Access is granted only once the webhook confirms payment — see
-      // /founder/purchased handling in App.jsx for what happens on return.
+      // Access is granted only once the webhook confirms payment, never by
+      // this redirect. The webhook also shares the private Drive folder with
+      // this founder's Google account.
       window.location.href = body.checkout_url;
     } catch {
       setBuyError("Couldn't reach the payment service. Please try again.");
       setBuyingBundleId(null);
     }
-  }
-
-  async function handleUnlock(creatorId) {
-    setUnlockingId(creatorId);
-    setUnlockError(null);
-
-    const { error: rpcError } = await supabase.rpc("fake_unlock_creator", {
-      p_creator_id: creatorId,
-      p_amount_cents: UNLOCK_PRICE_CENTS,
-    });
-
-    if (rpcError) {
-      setUnlockError("Couldn't unlock this creator. Please try again.");
-      setUnlockingId(null);
-      return;
-    }
-
-    const { data: contact } = await supabase.rpc("get_creator_contact", {
-      p_creator_id: creatorId,
-    });
-
-    setUnlockedContacts((current) => ({ ...current, [creatorId]: contact || "No contact info on file" }));
-    setUnlockingId(null);
   }
 
   function openMenu(panel = null) {
@@ -282,13 +283,13 @@ export default function FounderDashboard() {
       </aside>
 
       <main className={styles.main}>
-        <h1 className={styles.title}>Browse creators</h1>
-        <p className={styles.subtitle}>Browse creator reaction libraries and ready-to-buy bundles. Payments aren't connected yet — this is a preview of what's available.</p>
+        <h1 className={styles.title}>Discover reaction clips</h1>
+        <p className={styles.subtitle}>Browse creators and preview every clip for free. Buy a bundle to unlock the full-quality originals.</p>
 
         <nav className={styles.creatorTabs} aria-label="Browse view">
           <button className={view === "creators" ? styles.creatorTabActive : styles.creatorTab} onClick={() => setView("creators")}>Creators <b>{creators.length}</b></button>
           <button className={view === "bundles" ? styles.creatorTabActive : styles.creatorTab} onClick={() => setView("bundles")}>Bundles <b>{bundles.length}</b></button>
-          <button className={view === "purchases" ? styles.creatorTabActive : styles.creatorTab} onClick={() => setView("purchases")}>My purchases <b>{purchasedBundles.length}</b></button>
+          <button className={view === "purchases" ? styles.creatorTabActive : styles.creatorTab} onClick={() => setView("purchases")}>Purchased <b>{purchasedBundles.length}</b></button>
         </nav>
 
         {loading && (
@@ -312,33 +313,36 @@ export default function FounderDashboard() {
           <div className={styles.grid}>
             {creators.map((c) => (
               <div key={c.id} className={styles.creatorCard}>
-                <h3>{c.display_name}</h3>
+                <div className={styles.cardHead}>
+                  <div className={styles.avatar}>
+                    {c.avatar_url ? <img src={c.avatar_url} alt="" /> : (c.display_name || "?").charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <h3>{c.display_name}</h3>
+                    <span className={styles.cardSub}>Reaction creator</span>
+                  </div>
+                </div>
                 {c.bio && <p className={styles.bio}>{c.bio}</p>}
-                {c.reactions?.length > 0 && <div className={styles.pillRow}>{c.reactions.map((r) => <span key={r} className={styles.pill}>{r}</span>)}</div>}
-                {c.niches?.length > 0 && <div className={styles.pillRow}>{c.niches.map((n) => <span key={n} className={`${styles.pill} ${styles.pillViolet}`}>{n}</span>)}</div>}
+                {c.reactions?.length > 0 && (
+                  <div>
+                    <span className={styles.pillLabel}>Reactions</span>
+                    <div className={styles.pillRow}>{c.reactions.map((r) => <span key={r} className={styles.pill}>{r}</span>)}</div>
+                  </div>
+                )}
+                {c.niches?.length > 0 && (
+                  <div>
+                    <span className={styles.pillLabel}>Niches</span>
+                    <div className={styles.pillRow}>{c.niches.map((n) => <span key={n} className={`${styles.pill} ${styles.pillViolet}`}>{n}</span>)}</div>
+                  </div>
+                )}
                 <div className={styles.libraryMeta}>
                   <span>Reaction library</span>
-                  <strong>Available</strong>
+                  <span className={styles.freeTag}>Available</span>
                 </div>
-                {unlockedContacts[c.id] ? (
-                  <div className={styles.libraryMeta}>
-                    <span>Contact</span>
-                    <strong>{unlockedContacts[c.id]}</strong>
-                  </div>
-                ) : (
-                  <button
-                    className={styles.primaryAction}
-                    onClick={() => handleUnlock(c.id)}
-                    disabled={unlockingId === c.id}
-                  >
-                    {unlockingId === c.id ? "Unlocking…" : `Unlock contact · ${formatPrice(UNLOCK_PRICE_CENTS)}`}
-                  </button>
-                )}
               </div>
             ))}
           </div>
         )}
-        {unlockError && <p style={{ color: "#c43f50", fontSize: 12.5, marginTop: 12 }}>{unlockError}</p>}
 
         {!loading && view === "bundles" && bundles.length === 0 && (
           <div className={styles.emptyCreatorState}>
@@ -350,40 +354,59 @@ export default function FounderDashboard() {
 
         {!loading && view === "bundles" && bundles.length > 0 && (
           <div className={styles.grid}>
-            {bundles.map((b) => (
-              <div key={b.id} className={styles.creatorCard}>
-                <h3>{b.name}</h3>
-                <p className={styles.bio}>by {b.creator_display_name}</p>
-                {b.description && <p className={styles.bio}>{b.description}</p>}
-                <div className={styles.libraryMeta}>
-                  <span>{b.video_count} clips</span>
-                  <strong>{formatPrice(b.price_cents)}</strong>
-                </div>
-                {purchasedBundleIds.has(b.id) ? (
-                  <div className={styles.libraryMeta}>
-                    <span>Purchased</span>
-                    <strong>Ready to download</strong>
+            {bundles.map((b) => {
+              const clips = previewClips[b.id] || [];
+              const owned = purchasedBundleIds.has(b.id);
+              const emotions = [...new Set(clips.map((c) => c.emotion).filter(Boolean))];
+              const niches = [...new Set(clips.map((c) => c.niche).filter(Boolean))];
+              return (
+                <div key={b.id} className={styles.creatorCard}>
+                  <div>
+                    <h3>{b.name}</h3>
+                    <span className={styles.cardSub}>by {b.creator_display_name}</span>
                   </div>
-                ) : (
-                  <button
-                    className={styles.primaryAction}
-                    onClick={() => handleBuyBundle(b.id)}
-                    disabled={buyingBundleId === b.id}
-                  >
-                    {buyingBundleId === b.id ? "Starting checkout…" : `Buy bundle · ${formatPrice(b.price_cents)}`}
-                  </button>
-                )}
-              </div>
-            ))}
+                  {b.description && <p className={styles.bio}>{b.description}</p>}
+
+                  {clips.length > 0 ? (
+                    <div className={styles.previewGrid}>
+                      {clips.map((clip) => (
+                        <div key={clip.video_id} className={styles.previewTile}>
+                          {clip.url ? <video src={clip.url} controls preload="metadata" playsInline /> : <div className={styles.previewMissing}>Preview unavailable</div>}
+                          <span>{clip.name}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className={styles.previewMissing}>No previews yet</div>
+                  )}
+
+                  {emotions.length > 0 && <div className={styles.pillRow}>{emotions.map((e) => <span key={e} className={styles.pill}>{e}</span>)}</div>}
+                  {niches.length > 0 && <div className={styles.pillRow}>{niches.map((n) => <span key={n} className={`${styles.pill} ${styles.pillViolet}`}>{n}</span>)}</div>}
+
+                  <div className={styles.libraryMeta}>
+                    <span>{b.video_count} clips</span>
+                    <strong>{formatPrice(b.price_cents)}</strong>
+                  </div>
+                  {owned ? (
+                    <span className={styles.ownedTag}>✓ In your library</span>
+                  ) : (
+                    <button className={styles.primaryAction} onClick={() => handleBuyBundle(b.id)} disabled={buyingBundleId === b.id}>
+                      {buyingBundleId === b.id ? "Starting checkout…" : `Buy bundle · ${formatPrice(b.price_cents)}`}
+                    </button>
+                  )}
+                  {!owned && <p className={styles.hint}>Previews are watermarked. Buying unlocks the clean originals in a private Google Drive folder.</p>}
+                </div>
+              );
+            })}
           </div>
         )}
-        {buyError && <p style={{ color: "#c43f50", fontSize: 12.5, marginTop: 12 }}>{buyError}</p>}
+        {buyError && <p className={styles.errorText}>{buyError}</p>}
 
         {!loading && view === "purchases" && purchasedBundles.length === 0 && (
           <div className={styles.emptyCreatorState}>
             <div className={styles.emptyCreatorIcon} />
-            <strong>No purchases yet</strong>
-            <span>Bundles you buy will appear here with download links for each clip.</span>
+            <strong>Nothing purchased yet</strong>
+            <span>Bundles you buy will appear here with a private Google Drive download folder.</span>
           </div>
         )}
 
@@ -393,7 +416,7 @@ export default function FounderDashboard() {
               <div key={bundle.id} className={styles.creatorCard}>
                 <h3>{bundle.name}</h3>
                 {bundle.description && <p className={styles.bio}>{bundle.description}</p>}
-                <div className={styles.libraryMeta}><span>{bundle.videos.length} clips</span><strong>{formatPrice(bundle.price_cents)} paid</strong></div>
+                <div className={styles.libraryMeta}><span>{bundle.videos.length} clips</span><span className={styles.freeTag}>Purchased</span></div>
                 {(() => {
                   const folder = driveFolders[bundle.id];
                   if (folder?.status === "ready" && folder.drive_folder_url) {
@@ -417,11 +440,11 @@ export default function FounderDashboard() {
                   }
                   return null;
                 })()}
-                <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 10 }}>
+                <div className={styles.clipList}>
                   {bundle.videos.map((video) => (
-                    <div key={video.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderTop: "1px solid #eee" }}>
-                      <span style={{ fontSize: 13.5 }}>{video.name}</span>
-                      <span style={{ fontSize: 12.5, color: "#999" }}>Included in the Drive folder</span>
+                    <div key={video.id} className={styles.clipRow}>
+                      <span>{video.name}</span>
+                      <small>In Drive folder</small>
                     </div>
                   ))}
                 </div>

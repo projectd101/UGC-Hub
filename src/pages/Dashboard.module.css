@@ -54,3 +54,54 @@
 @media(max-width:1100px){.dashboardTop{grid-template-columns:1fr}.priceCard{min-height:0}.bundleGrid,.availableGrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:860px){.sidebar{width:205px}.appArea{margin-left:205px}.main{padding:28px 20px 60px}.statsGrid{grid-template-columns:1fr}.selectVideoGrid,.videoGrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:680px){.sidebar{display:none}.appArea{margin-left:0}.header{padding:0 17px}.mobileBrand{display:block}.main{padding:24px 15px 55px}.title{font-size:24px}.sectionHeading{align-items:flex-start;flex-direction:column}.primaryAction{width:100%}.uploadHero{align-items:flex-start;flex-wrap:wrap}.uploadHero>b{width:100%;margin-left:0;text-align:center}.bundleGrid,.availableGrid,.selectVideoGrid,.videoGrid,.formGrid{grid-template-columns:1fr}.uploadControls{flex-direction:column}.uploadControls label{min-width:0}.formFooter{align-items:stretch;flex-direction:column}.formFooter .primaryAction{width:100%}.bundleListCard{grid-template-columns:minmax(0,1fr) auto}.bundleListCard .bundleListActions{grid-column:1/-1}.notificationPanel{top:62px;right:8px;width:min(360px,calc(100vw - 16px));border-radius:16px}}
+
+/* ===== Founder browse: tabs, cards, grid (these classes were referenced but never styled) ===== */
+.creatorTabs{display:inline-flex;gap:4px;margin:22px 0 26px;padding:4px;border:1px solid #e1e9e5;border-radius:12px;background:#fff;box-shadow:0 1px 3px rgba(19,39,31,.04)}
+.creatorTab,.creatorTabActive{display:inline-flex;align-items:center;gap:8px;padding:9px 16px;border:0;border-radius:9px;background:transparent;color:#5f7168;font:inherit;font-size:13px;font-weight:650;cursor:pointer;transition:background .15s,color .15s}
+.creatorTab:hover{background:#f1f6f3;color:#172b23}
+.creatorTabActive{background:#165a42;color:#fff;box-shadow:0 2px 8px rgba(22,90,66,.25)}
+.creatorTab b,.creatorTabActive b{min-width:20px;padding:2px 7px;border-radius:999px;background:#edf2ef;color:#4a5e55;font-size:11px;font-weight:750;text-align:center}
+.creatorTabActive b{background:rgba(255,255,255,.2);color:#fff}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:18px}
+.creatorCard{display:flex;flex-direction:column;gap:12px;padding:20px;border:1px solid #e1e9e5;border-radius:16px;background:#fff;box-shadow:0 2px 10px rgba(19,39,31,.04);transition:box-shadow .18s,transform .18s,border-color .18s}
+.creatorCard:hover{border-color:#cfe0d7;box-shadow:0 8px 24px rgba(19,39,31,.08);transform:translateY(-2px)}
+.creatorCard h3{margin:0;color:#13271f;font-family:var(--font-display);font-size:17px;font-weight:750;letter-spacing:-.015em}
+.cardHead{display:flex;align-items:center;gap:12px}
+.avatar{width:42px;height:42px;flex:0 0 42px;display:grid;place-items:center;border-radius:12px;background:linear-gradient(135deg,#dff0e6,#c7e4d4);color:#165a42;font-weight:800;font-size:16px;overflow:hidden}
+.avatar img{width:100%;height:100%;object-fit:cover}
+.cardHead>div{min-width:0}
+.cardSub{display:block;margin-top:2px;color:#7d8d85;font-size:12px}
+.bio{margin:0;color:#5f7168;font-size:13px;line-height:1.55;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.creatorCard .pillRow{margin-top:0}
+.pillLabel{display:block;margin-bottom:6px;color:#8a9890;font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+.libraryMeta{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:auto;padding-top:14px;border-top:1px solid #eef2f0;color:#7d8d85;font-size:12.5px}
+.libraryMeta strong{color:#13271f;font-family:var(--font-display);font-size:15px;font-weight:750}
+.contactRow{display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:10px;background:#f4f8f6;color:#40534a;font-size:12.5px;font-weight:600;word-break:break-all}
+.creatorCard .primaryAction{width:100%;padding:12px 16px;border-radius:11px;font-size:13px}
+.freeTag{padding:3px 9px;border-radius:999px;background:#e4f2e9;color:#17704f;font-size:11px;font-weight:800;letter-spacing:.02em}
+.ownedTag{display:inline-flex;align-items:center;gap:6px;padding:10px 14px;border-radius:11px;background:#e7f5ec;color:#17704f;font-size:12.5px;font-weight:750}
+.clipList{display:flex;flex-direction:column;margin-top:4px}
+.clipRow{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 0;border-top:1px solid #eef2f0;font-size:13px;color:#13271f}
+.clipRow small{color:#8a9890;font-size:11.5px}
+.errorText{margin-top:14px;color:#c43f50;font-size:13px}
+.hint{margin:8px 0 0;color:#7d8d85;font-size:12px;line-height:1.5}
+
+/* skeleton loaders */
+@keyframes shimmer{0%{background-position:-400px 0}100%{background-position:400px 0}}
+.skeletonLine,.skeletonPills span,.skeletonMeta span,.skeletonButton{background:linear-gradient(90deg,#edf2ef 25%,#f6f9f7 50%,#edf2ef 75%);background-size:800px 100%;animation:shimmer 1.4s infinite linear;border-radius:8px}
+.skeletonLine{height:16px;width:55%}
+.skeletonLineWide{width:85%;height:12px}
+.skeletonPills{display:flex;gap:6px}.skeletonPills span{width:62px;height:22px;border-radius:999px}
+.skeletonMeta{display:flex;justify-content:space-between;gap:10px}.skeletonMeta span{height:14px;width:40%}
+.skeletonButton{height:42px;border-radius:11px}
+.emptyCreatorIcon{width:44px;height:44px;border-radius:13px;background:#eaf1ed}
+
+@media(max-width:680px){.creatorTabs{display:flex;width:100%}.creatorTab,.creatorTabActive{flex:1;justify-content:center;padding:9px 8px;font-size:12px}.grid{grid-template-columns:1fr}}
+
+/* Watermarked preview clips inside a bundle card */
+.previewGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px}
+.previewTile{display:flex;flex-direction:column;gap:5px;min-width:0}
+.previewTile video{width:100%;aspect-ratio:9/13;object-fit:cover;border-radius:10px;background:#e7ede9}
+.previewTile span{overflow:hidden;color:#5f7168;font-size:11.5px;text-overflow:ellipsis;white-space:nowrap}
+.previewMissing{display:grid;place-items:center;min-height:90px;border-radius:10px;background:#f1f5f3;color:#8a9890;font-size:12px}
