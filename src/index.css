@@ -13,6 +13,14 @@
 
   --line: #e6e6e8;
 
+  /* Creator-studio accent system */
+  --signal: #ff4d2e;
+  --signal-dim: #fff1ec;
+  --cash: #1f6f4a;
+  --cash-dim: #eaf3ee;
+  --paper: #faf9f6;
+  --hairline: #e8e6de;
+
   --font-display: "Inter", system-ui, sans-serif;
   --font-body: "Inter", system-ui, sans-serif;
 }

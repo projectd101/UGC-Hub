@@ -1,4 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  LayoutGrid, Clapperboard, Package, Settings, Bell, Wallet,
+  Upload, Plus, Lock, FolderCheck, FolderClock, TriangleAlert,
+  X, ChevronRight, Pencil, ExternalLink,
+} from "lucide-react";
 import { supabase } from "../supabaseClient";
 import { useAuth } from "../lib/AuthContext";
 import { createWatermarkedPreview } from "../lib/watermark";
@@ -6,12 +11,6 @@ import styles from "./Dashboard.module.css";
 
 const EMOTIONS = ["Happy", "Laughing", "Surprised", "Confused", "Excited", "Sad", "Angry", "Disgusted"];
 const NICHES = ["Reaction", "Meme", "UGC", "Gaming", "Lifestyle", "Comedy", "Ads", "Product"];
-
-function MenuIcon() { return <span className={styles.menuGlyph} aria-hidden="true"><i /><i /><i /></span>; }
-function BellIcon() { return <span className={styles.bellGlyph} aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg></span>; }
-function WalletIcon() { return <span className={styles.walletGlyph} aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4H19a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H6.5A2.5 2.5 0 0 1 4 17.5z"/><path d="M4 7h14.5A2.5 2.5 0 0 1 21 9.5v5H16a2.5 2.5 0 0 1 0-5h5"/><circle cx="16" cy="12" r=".7" fill="currentColor" stroke="none"/></svg></span>; }
-function UploadIcon() { return <span className={styles.featureIcon} aria-hidden="true">↑</span>; }
-function BundleIcon() { return <span className={styles.featureIcon} aria-hidden="true">◈</span>; }
 
 const VIDEO_BUCKET = "creator-videos";
 
@@ -24,9 +23,9 @@ function formatPrice(cents) {
 // has bought anything) — just enough status to know upload/moving is done.
 function DriveFolderStatus({ folder }) {
   if (!folder) return null;
-  if (folder.status === "creating") return <span className={styles.lockedLabel} title="Creating a Drive folder for this bundle's clips">📁 Preparing files…</span>;
-  if (folder.status === "ready") return <span className={styles.lockedLabel} title="All clips are in a dedicated Drive folder, ready for the buyer">📁 Files ready</span>;
-  if (folder.status === "failed") return <span className={styles.lockedLabel} style={{ color: "#c43f50" }} title={folder.error_message || "Something went wrong preparing the Drive folder"}>⚠ Drive folder failed</span>;
+  if (folder.status === "creating") return <span className={styles.lockedLabel} title="Creating a Drive folder for this bundle's clips"><FolderClock size={12} strokeWidth={2.25} />Preparing files…</span>;
+  if (folder.status === "ready") return <span className={styles.lockedLabel} title="All clips are in a dedicated Drive folder, ready for the buyer"><FolderCheck size={12} strokeWidth={2.25} />Files ready</span>;
+  if (folder.status === "failed") return <span className={styles.lockedLabel} style={{ color: "#b23b2e" }} title={folder.error_message || "Something went wrong preparing the Drive folder"}><TriangleAlert size={12} strokeWidth={2.25} />Drive folder failed</span>;
   return null;
 }
 
@@ -472,21 +471,21 @@ export default function CreatorDashboard() {
       <aside className={styles.sidebar}>
         <a href="/" className={`${styles.logo} ugcBrandMark`} aria-label="UGC Hub home"><span className="ugcBrandMark__ugc">UGC</span><span className="ugcBrandMark__hub">Hub</span></a>
         <nav className={styles.sidebarNav} aria-label="Creator navigation">
-          <button className={tab === "overview" ? styles.sidebarItemActive : styles.sidebarItem} onClick={() => goTo("overview")}><span className={styles.navIcon}>⌂</span>Overview</button>
-          <button className={tab === "videos" ? styles.sidebarItemActive : styles.sidebarItem} onClick={() => goTo("videos")}><span className={styles.navIcon}>▷</span>Videos <b>{stats.videos}</b></button>
-          <button className={tab === "bundles" ? styles.sidebarItemActive : styles.sidebarItem} onClick={() => goTo("bundles")}><span className={styles.navIcon}>◈</span>Bundles <b>{stats.bundles}</b></button>
-          <button className={styles.sidebarItem} onClick={() => openMenu("profile")}><span className={styles.navIcon}>⚙</span>Settings</button>
+          <button className={tab === "overview" ? styles.sidebarItemActive : styles.sidebarItem} onClick={() => goTo("overview")}><LayoutGrid className={styles.navIcon} size={18} strokeWidth={2} />Overview</button>
+          <button className={tab === "videos" ? styles.sidebarItemActive : styles.sidebarItem} onClick={() => goTo("videos")}><Clapperboard className={styles.navIcon} size={18} strokeWidth={2} />Videos <b>{stats.videos}</b></button>
+          <button className={tab === "bundles" ? styles.sidebarItemActive : styles.sidebarItem} onClick={() => goTo("bundles")}><Package className={styles.navIcon} size={18} strokeWidth={2} />Bundles <b>{stats.bundles}</b></button>
+          <button className={styles.sidebarItem} onClick={() => openMenu("profile")}><Settings className={styles.navIcon} size={18} strokeWidth={2} />Settings</button>
         </nav>
         <div className={styles.sidebarDivider} />
         <span className={styles.quickLabel}>Quick actions</span>
         <div className={styles.quickActions}>
-          <button className={styles.quickAction} onClick={() => goTo("videos")}><span>↑</span>Upload Video</button>
-          <button className={styles.quickAction} onClick={startNewBundle}><span>◈</span>Create Bundle</button>
+          <button className={styles.quickAction} onClick={() => goTo("videos")}><Upload size={16} strokeWidth={2.25} />Upload video</button>
+          <button className={styles.quickAction} onClick={startNewBundle}><Plus size={16} strokeWidth={2.25} />Create bundle</button>
         </div>
         <button className={styles.sidebarAccount} onClick={() => openMenu("profile")}>
           <span className={styles.accountAvatar}>{(creator?.display_name || user?.email || "C").charAt(0).toUpperCase()}</span>
           <span><strong>{creator?.display_name || "Creator"}</strong><small>{user?.email || "Creator account"}</small></span>
-          <b>›</b>
+          <ChevronRight size={16} strokeWidth={2.25} />
         </button>
       </aside>
 
@@ -494,53 +493,58 @@ export default function CreatorDashboard() {
         <header className={styles.header}>
           <div className={styles.mobileBrand}><a href="/" className={`${styles.logo} ugcBrandMark`} aria-label="UGC Hub home"><span className="ugcBrandMark__ugc">UGC</span><span className="ugcBrandMark__hub">Hub</span></a></div>
           <div className={styles.headerActions}>
-            <button className={styles.iconButton} aria-label="Wallet" aria-expanded={walletOpen} onClick={() => { closePanels(); setWalletOpen(true); }}><WalletIcon /></button>
-            <button className={styles.iconButton} aria-label="Notifications" aria-expanded={notificationsOpen} onClick={() => { closePanels(); setNotificationsOpen(true); }}><BellIcon /><span className={styles.notificationDot} /></button>
+            <button className={styles.iconButton} aria-label="Wallet" aria-expanded={walletOpen} onClick={() => { closePanels(); setWalletOpen(true); }}><Wallet size={19} strokeWidth={1.9} /></button>
+            <button className={styles.iconButton} aria-label="Notifications" aria-expanded={notificationsOpen} onClick={() => { closePanels(); setNotificationsOpen(true); }}><Bell size={19} strokeWidth={1.9} /><span className={styles.notificationDot} /></button>
             <button className={styles.signOut} onClick={signOut}>Sign out</button>
           </div>
         </header>
 
-        {walletOpen && <aside className={styles.notificationPanel} aria-label="Wallet"><div className={styles.panelHeader}><div><span className={styles.panelEyebrow}>Creator earnings</span><h2>Wallet</h2></div><button className={styles.closeButton} onClick={closePanels}>×</button></div><div className={styles.walletBalance}><span>Available balance</span><strong>$0.00</strong><small>Earnings and payout status will appear here once your bundles generate revenue.</small></div><button className={styles.walletAction} onClick={() => { setWalletOpen(false); openMenu("payouts"); }}>Set up payouts</button></aside>}
-        {notificationsOpen && <aside className={styles.notificationPanel} aria-label="Notifications"><div className={styles.panelHeader}><div><span className={styles.panelEyebrow}>Updates</span><h2>Notifications</h2></div><button className={styles.closeButton} onClick={closePanels}>×</button></div><div className={styles.emptyState}><BellIcon /><strong>You're all caught up</strong><span>There are no new notifications.</span></div></aside>}
+        {walletOpen && <aside className={styles.notificationPanel} aria-label="Wallet"><div className={styles.panelHeader}><div><span className={styles.panelEyebrow}>Creator earnings</span><h2>Wallet</h2></div><button className={styles.closeButton} onClick={closePanels}><X size={18} strokeWidth={2} /></button></div><div className={styles.walletBalance}><span>Available balance</span><strong>$0.00</strong><small>Earnings and payout status will appear here once your bundles generate revenue.</small></div><button className={styles.walletAction} onClick={() => { setWalletOpen(false); openMenu("payouts"); }}>Set up payouts</button></aside>}
+        {notificationsOpen && <aside className={styles.notificationPanel} aria-label="Notifications"><div className={styles.panelHeader}><div><span className={styles.panelEyebrow}>Updates</span><h2>Notifications</h2></div><button className={styles.closeButton} onClick={closePanels}><X size={18} strokeWidth={2} /></button></div><div className={styles.emptyState}><Bell size={26} strokeWidth={1.6} /><strong>You're all caught up</strong><span>There are no new notifications.</span></div></aside>}
 
         <aside className={`${styles.drawer} ${drawerOpen ? styles.drawerOpen : ""}`} aria-hidden={!drawerOpen}>
-          <div className={styles.drawerHeader}><div><span className={styles.panelEyebrow}>Creator account</span><h2>Menu</h2></div><button className={styles.closeButton} onClick={closePanels}>×</button></div>
+          <div className={styles.drawerHeader}><div><span className={styles.panelEyebrow}>Creator account</span><h2>Menu</h2></div><button className={styles.closeButton} onClick={closePanels}><X size={18} strokeWidth={2} /></button></div>
           <div className={styles.accountCard}><div className={styles.accountAvatar}>{(creator?.display_name || user?.email || "C").charAt(0).toUpperCase()}</div><div><strong>{creator?.display_name || "Creator"}</strong><span>{user?.email || "Creator account"}</span></div></div>
           <nav className={styles.drawerNav}>
-            <button className={styles.drawerItem} onClick={() => setActivePanel("profile")}><span>Account information</span><b>›</b></button>
-            <button className={styles.drawerItem} onClick={() => setActivePanel("payouts")}><span>Payouts</span><b>›</b></button>
+            <button className={styles.drawerItem} onClick={() => setActivePanel("profile")}><span>Account information</span><ChevronRight size={16} strokeWidth={2.25} /></button>
+            <button className={styles.drawerItem} onClick={() => setActivePanel("payouts")}><span>Payouts</span><ChevronRight size={16} strokeWidth={2.25} /></button>
           </nav>
           {activePanel && <div className={styles.drawerDetail}><span className={styles.panelEyebrow}>{activePanel === "profile" ? "Account" : "Payments"}</span><h3>{activePanel === "profile" ? "Account information" : "Payouts"}</h3><p>{activePanel === "profile" ? "Your creator account details and public profile settings will live here." : "Set up how UGC Hub should send your earnings. Your payout method will be stored securely when payments are connected."}</p>{activePanel === "payouts" && <button className={styles.walletAction}>Set up payout method</button>}</div>}
-          <div className={styles.drawerFooter}><button className={`${styles.drawerItem} ${styles.deleteItem}`} onClick={handleDeleteAccount}><span>Delete account</span><b>›</b></button></div>
+          <div className={styles.drawerFooter}><button className={`${styles.drawerItem} ${styles.deleteItem}`} onClick={handleDeleteAccount}><span>Delete account</span><ChevronRight size={16} strokeWidth={2.25} /></button></div>
         </aside>
 
         <main className={styles.main}>
           <div className={styles.pageIntro}>
-            <div><span className={styles.panelEyebrow}>Creator studio</span><h1 className={styles.title}>Good morning, {creator?.display_name || "Creator"} <span className={styles.sun}>☀</span></h1><p className={styles.subtitle}>Here's what's happening with your content today.</p></div>
+            <div><span className={styles.panelEyebrow}>Creator studio</span><h1 className={styles.title}>Good morning, {creator?.display_name || "Creator"}</h1><p className={styles.subtitle}>Here's what's happening with your content today.</p></div>
           </div>
 
           {tab === "overview" && <section className={styles.studioSection}>
-            <div className={styles.dashboardTop}>
-              <div className={styles.statsGrid}>
-                <div className={styles.statCard}><div className={`${styles.statIcon} ${styles.statIconGreen}`}>▷</div><div><span>Total Videos</span><strong>{stats.videos}</strong><small>Content in your collection</small></div></div>
-                <div className={styles.statCard}><div className={`${styles.statIcon} ${styles.statIconGold}`}>◈</div><div><span>Bundles</span><strong>{stats.bundles}</strong><small>{stats.publishedBundles} published</small></div></div>
-                <div className={styles.statCard}><div className={`${styles.statIcon} ${styles.statIconPurple}`}>◇</div><div><span>Total Earnings</span><strong>$0.00</strong><small>Available balance</small></div></div>
+            <div className={styles.ticker}>
+              <div className={styles.tickerItem}><span>Videos</span><strong>{stats.videos}</strong></div>
+              <div className={styles.tickerDivider} />
+              <div className={styles.tickerItem}><span>Bundles</span><strong>{stats.bundles}</strong><small>{stats.publishedBundles} published</small></div>
+              <div className={styles.tickerDivider} />
+              <div className={styles.tickerItem}><span>Earnings</span><strong className={styles.cashValue}>$0.00</strong><small>available</small></div>
+              <div className={styles.tickerSpacer} />
+              <div className={styles.tickerPrice}>
+                <span>Your price per clip <button type="button" onClick={() => window.alert("Your platform clip price is currently configured by UGC Hub.")} aria-label="Learn more"><ExternalLink size={11} strokeWidth={2.25} /></button></span>
+                <strong>{formatPrice(pricePerClipCents)}</strong>
+                <span className={styles.activeDot}>Active</span>
               </div>
-              <div className={styles.priceCard}><div className={styles.priceCardTop}><span className={styles.priceCheck}>✓</span><div><strong>Your Price</strong><small>per clip <button type="button" onClick={() => window.alert("Your platform clip price is currently configured by UGC Hub.")}>↗</button></small></div><span className={styles.activePrice}>Active</span></div><strong className={styles.priceValue}>{formatPrice(pricePerClipCents)}</strong></div>
             </div>
 
             <button className={styles.uploadHero} onClick={() => goTo("videos")}>
-              <span className={styles.uploadHeroIcon}>↑</span><span><strong>Upload Your Video</strong><small>Add a video to your collection. Then create a bundle and set your price.</small></span><b>Upload Video</b>
+              <span className={styles.uploadHeroIcon}><Upload size={20} strokeWidth={2.1} /></span><span><strong>Upload your video</strong><small>Add a video to your collection. Then create a bundle and set your price.</small></span><b>Upload video</b>
             </button>
 
             <div className={styles.sectionCard}>
-              <div className={styles.sectionHeading}><div><h2>Your Bundles</h2><p>Create bundles, set your price and publish them to start earning.</p></div><button className={styles.primaryAction} onClick={startNewBundle}><BundleIcon />Create Bundle</button></div>
+              <div className={styles.sectionHeading}><div><h2>Your bundles</h2><p>Create bundles, set your price and publish them to start earning.</p></div><button className={styles.primaryAction} onClick={startNewBundle}><Plus size={15} strokeWidth={2.5} />Create bundle</button></div>
               {!bundles.length ? <div className={styles.emptyCreatorState}><strong>No bundles yet</strong><span>Upload videos, select the clips you want, then create your first bundle.</span></div> : <div className={styles.bundleGrid}>{bundles.map((bundle) => {
                 const ids = libraryVideoIds[bundle.library_id] || [];
                 const thumbs = ids.map((id) => videos.find((video) => video.id === id)).filter(Boolean).slice(0, 3);
                 return <article className={styles.bundleCard} key={bundle.id}>
                   <div className={styles.thumbStrip}>{thumbs.map((video) => video.previewUrl ? <video key={video.id} src={video.previewUrl} muted playsInline /> : <div key={video.id} className={styles.thumbPlaceholder} />)}</div>
-                  <div className={styles.bundleCardBody}><div className={styles.bundleTop}><div><h3>{bundle.name}</h3><p>{ids.length} videos · {bundle.status === "published" ? "Public" : "Draft"}</p></div><strong>{formatPrice(bundle.price_cents || ids.length * pricePerClipCents)}</strong></div><div className={styles.bundleMeta}><span className={bundle.status === "published" ? styles.publishedBadge : styles.draftBadge}>{bundle.status === "published" ? "Published" : "Draft"}</span>{bundle.status === "published" ? <><span className={styles.lockedLabel}>🔒 Locked</span><DriveFolderStatus folder={driveFolders[bundle.id]} /></> : <><button onClick={() => startEditingBundle(bundle)}>Edit</button><button onClick={() => publishBundle(bundle)} disabled={publishingBundleId === bundle.id}>{publishingBundleId === bundle.id ? "Publishing…" : "Publish"}</button></>}</div></div>
+                  <div className={styles.bundleCardBody}><div className={styles.bundleTop}><div><h3>{bundle.name}</h3><p>{ids.length} videos · {bundle.status === "published" ? "Public" : "Draft"}</p></div><strong>{formatPrice(bundle.price_cents || ids.length * pricePerClipCents)}</strong></div><div className={styles.bundleMeta}><span className={bundle.status === "published" ? styles.publishedBadge : styles.draftBadge}>{bundle.status === "published" ? "Published" : "Draft"}</span>{bundle.status === "published" ? <><span className={styles.lockedLabel}><Lock size={11} strokeWidth={2.25} />Locked</span><DriveFolderStatus folder={driveFolders[bundle.id]} /></> : <><button onClick={() => startEditingBundle(bundle)}><Pencil size={11} strokeWidth={2.25} />Edit</button><button onClick={() => publishBundle(bundle)} disabled={publishingBundleId === bundle.id}>{publishingBundleId === bundle.id ? "Publishing…" : "Publish"}</button></>}</div></div>
                 </article>;
               })}</div>}
             </div>
@@ -553,11 +557,11 @@ export default function CreatorDashboard() {
           </section>}
 
           {tab === "videos" && <section className={styles.studioSection}>
-            <div className={styles.sectionHeading}><div><h2>Videos</h2><p>Upload your reaction clips. Videos can be added to one or more draft bundles before publishing.</p></div><button className={styles.primaryAction} onClick={() => fileInput.current?.click()} disabled={uploading}><UploadIcon />{uploading ? "Uploading…" : "Upload Video"}</button></div>
+            <div className={styles.sectionHeading}><div><h2>Videos</h2><p>Upload your reaction clips. Videos can be added to one or more draft bundles before publishing.</p></div><button className={styles.primaryAction} onClick={() => fileInput.current?.click()} disabled={uploading}><Upload size={15} strokeWidth={2.25} />{uploading ? "Uploading…" : "Upload video"}</button></div>
             <div className={styles.uploadControls}><label>Emotion<select value={selectedEmotion} onChange={(e) => setSelectedEmotion(e.target.value)}>{EMOTIONS.map((item) => <option key={item}>{item}</option>)}</select></label><label>Niche<select value={selectedNiche} onChange={(e) => setSelectedNiche(e.target.value)}>{NICHES.map((item) => <option key={item}>{item}</option>)}</select></label><input ref={fileInput} hidden type="file" accept="video/*" multiple onChange={(e) => { handleFiles(e.target.files); e.target.value = ""; }} /></div>
             {uploadError && <p style={{ color: "#c43f50", fontSize: 12.5 }}>{uploadError}</p>}
-            <button className={styles.dropzone} onClick={() => fileInput.current?.click()} disabled={uploading}><span className={styles.dropzoneIcon}>↑</span><strong>{uploadStatus || "Drop videos here or click to upload"}</strong><small>MP4, MOV, WebM · 9:16 reaction clips recommended · watermarking runs in your browser and may take a few seconds per clip</small></button>
-            {!videos.length ? <div className={styles.emptyCreatorState}><strong>No videos yet</strong><span>Upload your first reaction clips to start building bundles.</span></div> : <div className={styles.videoGrid}>{videos.map((video) => <article key={video.id} className={styles.videoCard}>{video.previewUrl ? <video src={video.previewUrl} muted controls playsInline /> : <div className={styles.videoPlaceholder}>Video</div>}<div className={styles.videoCardBody}><div className={styles.videoCardTop}><div><h3>{video.name}</h3><span>{video.filename}</span></div><button className={styles.moreButton} onClick={() => removeVideo(video.id)} aria-label={`Remove ${video.name}`} disabled={bundles.some((bundle) => bundle.status === "published" && (libraryVideoIds[bundle.library_id] || []).includes(video.id))}>{bundles.some((bundle) => bundle.status === "published" && (libraryVideoIds[bundle.library_id] || []).includes(video.id)) ? "🔒" : "×"}</button></div><div className={styles.pillRow}><span className={styles.pill}>{video.emotion}</span><span className={`${styles.pill} ${styles.pillViolet}`}>{video.niche}</span>{video.processing_status === "pending" && <span className={styles.pill} style={{ background: "#fff3cd", color: "#8a6d00" }}>Watermark pending</span>}{video.processing_status === "failed" && <span className={styles.pill} style={{ background: "#fde2e2", color: "#c43f50" }}>Watermark failed</span>}</div></div></article>)}</div>}
+            <button className={styles.dropzone} onClick={() => fileInput.current?.click()} disabled={uploading}><span className={styles.dropzoneIcon}><Upload size={22} strokeWidth={2} /></span><strong>{uploadStatus || "Drop videos here or click to upload"}</strong><small>MP4, MOV, WebM · 9:16 reaction clips recommended · watermarking runs in your browser and may take a few seconds per clip</small></button>
+            {!videos.length ? <div className={styles.emptyCreatorState}><strong>No videos yet</strong><span>Upload your first reaction clips to start building bundles.</span></div> : <div className={styles.videoGrid}>{videos.map((video) => <article key={video.id} className={styles.videoCard}>{video.previewUrl ? <video src={video.previewUrl} muted controls playsInline /> : <div className={styles.videoPlaceholder}>Video</div>}<div className={styles.videoCardBody}><div className={styles.videoCardTop}><div><h3>{video.name}</h3><span>{video.filename}</span></div><button className={styles.moreButton} onClick={() => removeVideo(video.id)} aria-label={`Remove ${video.name}`} disabled={bundles.some((bundle) => bundle.status === "published" && (libraryVideoIds[bundle.library_id] || []).includes(video.id))}>{bundles.some((bundle) => bundle.status === "published" && (libraryVideoIds[bundle.library_id] || []).includes(video.id)) ? <Lock size={13} strokeWidth={2.25} /> : <X size={15} strokeWidth={2.25} />}</button></div><div className={styles.pillRow}><span className={styles.pill}>{video.emotion}</span><span className={`${styles.pill} ${styles.pillViolet}`}>{video.niche}</span>{video.processing_status === "pending" && <span className={styles.pill} style={{ background: "#fff3cd", color: "#8a6d00" }}>Watermark pending</span>}{video.processing_status === "failed" && <span className={styles.pill} style={{ background: "#fde2e2", color: "#c43f50" }}>Watermark failed</span>}</div></div></article>)}</div>}
           </section>}
 
           {tab === "bundles" && <section className={styles.studioSection}>
@@ -569,7 +573,7 @@ export default function CreatorDashboard() {
               <div className={styles.formFooter}><span>Your price is {formatPrice(pricePerClipCents)} per clip · {bundleVideoIds.length ? formatPrice(previewBundlePrice.priceCents) : "$0.00"} total</span><button className={styles.primaryAction} type="submit" disabled={!bundleName.trim() || !bundleVideoIds.length}>{editingBundleId ? "Save Bundle" : "Create Bundle"}</button></div>
             </form>
 
-            <div className={styles.sectionCard}><div className={styles.sectionHeading}><div><h2>Your Bundles</h2><p>Finish draft bundles, then publish to lock their video selection.</p></div></div>{!bundles.length ? <div className={styles.emptyCreatorState}><strong>No bundles yet</strong><span>Your finished bundles will appear here.</span></div> : <div className={styles.bundleGrid}>{bundles.map((bundle) => { const ids = libraryVideoIds[bundle.library_id] || []; return <article className={styles.bundleListCard} key={bundle.id}><div><strong>{bundle.name}</strong><span>{ids.length} videos · {bundle.status === "published" ? "Published and locked" : "Draft"}</span></div><b>{formatPrice(bundle.price_cents || ids.length * pricePerClipCents)}</b>{bundle.status === "published" ? <div className={styles.bundleListActions}><span className={styles.lockedLabel}>🔒 Locked</span><DriveFolderStatus folder={driveFolders[bundle.id]} />{(!driveFolders[bundle.id] || driveFolders[bundle.id].status === "failed" || driveFolders[bundle.id].status === "pending") && <button onClick={() => createBundleDriveFolder(bundle.id)}>{driveFolders[bundle.id]?.status === "failed" ? "Retry Drive folder" : "Set up Drive folder"}</button>}</div> : <div className={styles.bundleListActions}><button onClick={() => startEditingBundle(bundle)}>Edit</button><button onClick={() => publishBundle(bundle)} disabled={publishingBundleId === bundle.id}>{publishingBundleId === bundle.id ? "Publishing…" : "Publish"}</button></div>}</article>; })}</div>}</div>
+            <div className={styles.sectionCard}><div className={styles.sectionHeading}><div><h2>Your Bundles</h2><p>Finish draft bundles, then publish to lock their video selection.</p></div></div>{!bundles.length ? <div className={styles.emptyCreatorState}><strong>No bundles yet</strong><span>Your finished bundles will appear here.</span></div> : <div className={styles.bundleGrid}>{bundles.map((bundle) => { const ids = libraryVideoIds[bundle.library_id] || []; return <article className={styles.bundleListCard} key={bundle.id}><div><strong>{bundle.name}</strong><span>{ids.length} videos · {bundle.status === "published" ? "Published and locked" : "Draft"}</span></div><b>{formatPrice(bundle.price_cents || ids.length * pricePerClipCents)}</b>{bundle.status === "published" ? <div className={styles.bundleListActions}><span className={styles.lockedLabel}><Lock size={11} strokeWidth={2.25} />Locked</span><DriveFolderStatus folder={driveFolders[bundle.id]} />{(!driveFolders[bundle.id] || driveFolders[bundle.id].status === "failed" || driveFolders[bundle.id].status === "pending") && <button onClick={() => createBundleDriveFolder(bundle.id)}>{driveFolders[bundle.id]?.status === "failed" ? "Retry Drive folder" : "Set up Drive folder"}</button>}</div> : <div className={styles.bundleListActions}><button onClick={() => startEditingBundle(bundle)}>Edit</button><button onClick={() => publishBundle(bundle)} disabled={publishingBundleId === bundle.id}>{publishingBundleId === bundle.id ? "Publishing…" : "Publish"}</button></div>}</article>; })}</div>}</div>
           </section>}
         </main>
       </div>
