@@ -46,6 +46,7 @@ export default function FounderDashboard() {
   const [driveFolders, setDriveFolders] = useState({}); // { [bundleId]: { status, drive_folder_url } }
   const [buyingBundleId, setBuyingBundleId] = useState(null);
   const [buyError, setBuyError] = useState(null);
+  const [openBundleId, setOpenBundleId] = useState(null); // bundle whose detail view is open
   const [previewClips, setPreviewClips] = useState({}); // { [bundleId]: [{ video_id, name, emotion, niche, url }] }
 
   function loadData() {
@@ -288,7 +289,7 @@ export default function FounderDashboard() {
 
         <nav className={styles.creatorTabs} aria-label="Browse view">
           <button className={view === "creators" ? styles.creatorTabActive : styles.creatorTab} onClick={() => setView("creators")}>Creators <b>{creators.length}</b></button>
-          <button className={view === "bundles" ? styles.creatorTabActive : styles.creatorTab} onClick={() => setView("bundles")}>Bundles <b>{bundles.length}</b></button>
+          <button className={view === "bundles" ? styles.creatorTabActive : styles.creatorTab} onClick={() => { setView("bundles"); setOpenBundleId(null); }}>Bundles <b>{bundles.length}</b></button>
           <button className={view === "purchases" ? styles.creatorTabActive : styles.creatorTab} onClick={() => setView("purchases")}>Purchased <b>{purchasedBundles.length}</b></button>
         </nav>
 
@@ -352,54 +353,93 @@ export default function FounderDashboard() {
           </div>
         )}
 
-        {!loading && view === "bundles" && bundles.length > 0 && (
+        {!loading && view === "bundles" && bundles.length > 0 && !openBundleId && (
           <div className={styles.grid}>
             {bundles.map((b) => {
               const clips = previewClips[b.id] || [];
               const owned = purchasedBundleIds.has(b.id);
+              const cover = clips.find((c) => c.url);
               const emotions = [...new Set(clips.map((c) => c.emotion).filter(Boolean))];
               const niches = [...new Set(clips.map((c) => c.niche).filter(Boolean))];
               return (
-                <div key={b.id} className={styles.creatorCard}>
+                <div key={b.id} className={`${styles.creatorCard} ${styles.bundleCardClickable}`} onClick={() => setOpenBundleId(b.id)} role="button" tabIndex={0}
+                  onKeyDown={(e) => { if (e.key === "Enter") setOpenBundleId(b.id); }}>
+                  <div className={styles.coverWrap}>
+                    {cover ? (
+                      // #t=0.5 makes the browser show a frame from half a second in as the poster.
+                      <video className={styles.cover} src={`${cover.url}#t=0.5`} preload="metadata" muted playsInline />
+                    ) : (
+                      <div className={styles.coverEmpty}>🎬</div>
+                    )}
+                    <span className={styles.clipBadge}>{b.video_count} clips</span>
+                  </div>
                   <div>
                     <h3>{b.name}</h3>
                     <span className={styles.cardSub}>by {b.creator_display_name}</span>
                   </div>
                   {b.description && <p className={styles.bio}>{b.description}</p>}
-
-                  {clips.length > 0 ? (
-                    <div className={styles.previewGrid}>
-                      {clips.map((clip) => (
-                        <div key={clip.video_id} className={styles.previewTile}>
-                          {clip.url ? <video src={clip.url} controls preload="metadata" playsInline /> : <div className={styles.previewMissing}>Preview unavailable</div>}
-                          <span>{clip.name}</span>
-                        </div>
-                      ))}
+                  {(emotions.length > 0 || niches.length > 0) && (
+                    <div className={styles.pillRow}>
+                      {emotions.map((e) => <span key={e} className={styles.pill}>{e}</span>)}
+                      {niches.map((n) => <span key={n} className={`${styles.pill} ${styles.pillViolet}`}>{n}</span>)}
                     </div>
-                  ) : (
-                    <div className={styles.previewMissing}>No previews yet</div>
                   )}
-
-                  {emotions.length > 0 && <div className={styles.pillRow}>{emotions.map((e) => <span key={e} className={styles.pill}>{e}</span>)}</div>}
-                  {niches.length > 0 && <div className={styles.pillRow}>{niches.map((n) => <span key={n} className={`${styles.pill} ${styles.pillViolet}`}>{n}</span>)}</div>}
-
                   <div className={styles.libraryMeta}>
-                    <span>{b.video_count} clips</span>
                     <strong>{formatPrice(b.price_cents)}</strong>
+                    {owned ? <span className={styles.ownedTag}>✓ Purchased</span> : <span className={styles.viewLink}>View bundle →</span>}
                   </div>
-                  {owned ? (
-                    <span className={styles.ownedTag}>✓ In your library</span>
-                  ) : (
-                    <button className={styles.primaryAction} onClick={() => handleBuyBundle(b.id)} disabled={buyingBundleId === b.id}>
-                      {buyingBundleId === b.id ? "Starting checkout…" : `Buy bundle · ${formatPrice(b.price_cents)}`}
-                    </button>
-                  )}
-                  {!owned && <p className={styles.hint}>Previews are watermarked. Buying unlocks the clean originals in a private Google Drive folder.</p>}
                 </div>
               );
             })}
           </div>
         )}
+
+        {!loading && view === "bundles" && openBundleId && (() => {
+          const b = bundles.find((x) => x.id === openBundleId);
+          if (!b) return null;
+          const clips = previewClips[b.id] || [];
+          const owned = purchasedBundleIds.has(b.id);
+          return (
+            <div className={styles.detail}>
+              <button className={styles.backLink} onClick={() => setOpenBundleId(null)}>← All bundles</button>
+              <div className={styles.detailHead}>
+                <div>
+                  <h2>{b.name}</h2>
+                  <span className={styles.cardSub}>by {b.creator_display_name} · {b.video_count} clips</span>
+                  {b.description && <p className={styles.bio} style={{ WebkitLineClamp: "unset", marginTop: 8 }}>{b.description}</p>}
+                </div>
+                <div className={styles.buyBox}>
+                  <strong>{formatPrice(b.price_cents)}</strong>
+                  {owned ? (
+                    <span className={styles.ownedTag}>✓ Purchased</span>
+                  ) : (
+                    <button className={styles.primaryAction} onClick={() => handleBuyBundle(b.id)} disabled={buyingBundleId === b.id}>
+                      {buyingBundleId === b.id ? "Starting checkout…" : "Buy bundle"}
+                    </button>
+                  )}
+                </div>
+              </div>
+              {!owned && <p className={styles.hint}>These previews are watermarked. Buying unlocks the clean originals in a private Google Drive folder.</p>}
+
+              {clips.length > 0 ? (
+                <div className={styles.detailGrid}>
+                  {clips.map((clip) => (
+                    <div key={clip.video_id} className={styles.previewTile}>
+                      {clip.url ? <video src={clip.url} controls preload="metadata" playsInline /> : <div className={styles.previewMissing}>Preview unavailable</div>}
+                      <span>{clip.name}</span>
+                      <div className={styles.pillRow} style={{ marginTop: 0 }}>
+                        {clip.emotion && <span className={styles.pill}>{clip.emotion}</span>}
+                        {clip.niche && <span className={`${styles.pill} ${styles.pillViolet}`}>{clip.niche}</span>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className={styles.previewMissing}>This bundle has no watermarked previews yet.</div>
+              )}
+            </div>
+          );
+        })()}
         {buyError && <p className={styles.errorText}>{buyError}</p>}
 
         {!loading && view === "purchases" && purchasedBundles.length === 0 && (

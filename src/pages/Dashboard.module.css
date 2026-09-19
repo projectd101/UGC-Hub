@@ -105,3 +105,27 @@
 .previewTile video{width:100%;aspect-ratio:9/13;object-fit:cover;border-radius:10px;background:#e7ede9}
 .previewTile span{overflow:hidden;color:#5f7168;font-size:11.5px;text-overflow:ellipsis;white-space:nowrap}
 .previewMissing{display:grid;place-items:center;min-height:90px;border-radius:10px;background:#f1f5f3;color:#8a9890;font-size:12px}
+
+/* Bundle cover card + detail view */
+.bundleCardClickable{cursor:pointer;padding:0;overflow:hidden;gap:0}
+.bundleCardClickable>*:not(.coverWrap){margin:0 20px}
+.bundleCardClickable>div:nth-child(2){margin-top:16px}
+.bundleCardClickable>.bio{margin-top:8px}
+.bundleCardClickable>.pillRow{margin-top:12px}
+.bundleCardClickable>.libraryMeta{margin:16px 20px 20px}
+.coverWrap{position:relative;aspect-ratio:16/10;background:#e7ede9;overflow:hidden}
+.cover{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none}
+.coverEmpty{width:100%;height:100%;display:grid;place-items:center;font-size:34px;background:linear-gradient(135deg,#e4efe9,#d3e5db)}
+.clipBadge{position:absolute;left:12px;bottom:12px;padding:4px 10px;border-radius:999px;background:rgba(19,39,31,.78);color:#fff;font-size:11.5px;font-weight:700;backdrop-filter:blur(4px)}
+.viewLink{color:#165a42;font-size:13px;font-weight:750}
+.detail{display:flex;flex-direction:column;gap:6px}
+.backLink{align-self:flex-start;margin-bottom:10px;padding:6px 0;border:0;background:none;color:#165a42;font:inherit;font-size:13.5px;font-weight:700;cursor:pointer}
+.backLink:hover{text-decoration:underline}
+.detailHead{display:flex;justify-content:space-between;align-items:flex-start;gap:24px;flex-wrap:wrap}
+.detailHead h2{margin:0;color:#13271f;font-family:var(--font-display);font-size:26px;font-weight:800;letter-spacing:-.02em}
+.buyBox{display:flex;align-items:center;gap:16px}
+.buyBox strong{color:#13271f;font-family:var(--font-display);font-size:26px;font-weight:800}
+.buyBox .primaryAction{width:auto;padding:12px 22px}
+.detailGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:16px;margin-top:18px}
+.detailGrid .previewTile video{aspect-ratio:9/14}
+@media(max-width:680px){.detailHead{flex-direction:column}.buyBox{width:100%;justify-content:space-between}}
