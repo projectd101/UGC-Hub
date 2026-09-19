@@ -104,13 +104,22 @@ export default function CreatorDashboard() {
   }, [user.id]);
 
   // Signed URLs for a creator's own (private) files, so they can preview them in-studio.
+  // Signed URLs for a creator's own (private) files, so they can preview
+  // them in-studio. Always prefers the watermarked preview when available —
+  // this is also roughly what a founder will eventually see. Falls back to
+  // the original only if no watermarked version exists yet (still
+  // processing, or watermarking failed) AND the original hasn't already
+  // been moved to Drive-only storage.
   async function attachPreviewUrls(videoRows) {
     const withUrls = await Promise.all(
       videoRows.map(async (v) => {
-        const { data } = await supabase.storage
+        const previewPath = v.watermarked_storage_path || v.storage_path;
+        const { data, error } = await supabase.storage
           .from(VIDEO_BUCKET)
-          .createSignedUrl(v.storage_path, 3600);
-        return { ...v, previewUrl: data?.signedUrl || null };
+          .createSignedUrl(previewPath, 3600);
+        // A missing file (already moved to Drive-only, or never uploaded)
+        // fails signing rather than silently showing the wrong video.
+        return { ...v, previewUrl: error ? null : data?.signedUrl || null };
       })
     );
     return withUrls;
