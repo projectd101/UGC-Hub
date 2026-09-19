@@ -96,7 +96,7 @@ export default function FounderDashboard() {
             const bundle = p.bundles;
             if (!bundle) return null;
 
-            let videoQuery = supabase.from("videos").select("id, name, filename, original_drive_url, processing_status");
+            let videoQuery = supabase.from("videos").select("id, name, filename, processing_status");
             if (bundle.library_id) {
               const { data: lv } = await supabase.from("library_videos").select("video_id").eq("library_id", bundle.library_id);
               const videoIds = (lv || []).map((row) => row.video_id);
@@ -413,7 +413,7 @@ export default function FounderDashboard() {
                     return <p style={{ fontSize: 12.5, color: "#999", marginTop: 10 }}>Preparing your files for download…</p>;
                   }
                   if (folder?.status === "failed") {
-                    return <p style={{ fontSize: 12.5, color: "#c43f50", marginTop: 10 }}>We hit a snag preparing the full download — use the per-clip links below, or contact support.</p>;
+                    return <p style={{ fontSize: 12.5, color: "#c43f50", marginTop: 10 }}>We hit a snag preparing your download — please contact support and we'll sort it out.</p>;
                   }
                   return null;
                 })()}
@@ -421,13 +421,7 @@ export default function FounderDashboard() {
                   {bundle.videos.map((video) => (
                     <div key={video.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderTop: "1px solid #eee" }}>
                       <span style={{ fontSize: 13.5 }}>{video.name}</span>
-                      {video.original_drive_url ? (
-                        <a href={video.original_drive_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 13, fontWeight: 600, color: "#6b5bff" }}>
-                          Download
-                        </a>
-                      ) : (
-                        <span style={{ fontSize: 12.5, color: "#999" }}>Preparing file…</span>
-                      )}
+                      <span style={{ fontSize: 12.5, color: "#999" }}>Included in the Drive folder</span>
                     </div>
                   ))}
                 </div>

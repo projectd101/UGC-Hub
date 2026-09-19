@@ -252,10 +252,16 @@ export default function CreatorDashboard() {
       // creator's upload flow shouldn't block on it. If it fails, the video
       // is still saved and usable; original_drive_url just stays empty
       // until a retry.
-      fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/drive-upload`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ video_id: row.id }),
+      // drive-upload requires the creator's own session (it verifies they
+      // own the video), so we must send the access token.
+      supabase.auth.getSession().then(({ data: sessionData }) => {
+        const accessToken = sessionData?.session?.access_token;
+        if (!accessToken) return;
+        return fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/drive-upload`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+          body: JSON.stringify({ video_id: row.id }),
+        });
       }).catch((err) => console.error("Drive upload trigger failed:", err));
     }
 
@@ -432,7 +438,7 @@ export default function CreatorDashboard() {
 
       setDriveFolders((current) => ({
         ...current,
-        [bundleId]: { status: body.status, drive_folder_url: body.drive_folder_url, error_message: body.failed_videos?.length ? body.failed_videos.join("; ") : null },
+        [bundleId]: { status: body.status, drive_folder_url: body.drive_folder_url, error_message: body.failed?.length ? body.failed.join("; ") : null },
       }));
     } catch (err) {
       // Transient network hiccup — retry a couple of times before giving up
