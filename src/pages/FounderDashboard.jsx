@@ -48,6 +48,7 @@ export default function FounderDashboard() {
   const [unlockingId, setUnlockingId] = useState(null);
   const [unlockError, setUnlockError] = useState(null);
   const [purchasedBundleIds, setPurchasedBundleIds] = useState(new Set());
+  const [driveFolders, setDriveFolders] = useState({}); // { [bundleId]: { status, drive_folder_url } }
   const [buyingBundleId, setBuyingBundleId] = useState(null);
   const [buyError, setBuyError] = useState(null);
 
@@ -70,6 +71,21 @@ export default function FounderDashboard() {
           .eq("status", "succeeded");
 
         setPurchasedBundleIds(new Set((purchases || []).map((p) => p.bundle_id)));
+
+        // The Drive folder link ("download everything at once") is gated
+        // entirely by RLS on bundle_drive_folders: this query simply
+        // returns nothing for a bundle this founder hasn't paid for, no
+        // matter what bundle_ids we ask for.
+        const purchasedIds = (purchases || []).map((p) => p.bundle_id);
+        if (purchasedIds.length) {
+          const { data: folders } = await supabase
+            .from("bundle_drive_folders")
+            .select("bundle_id, status, drive_folder_url")
+            .in("bundle_id", purchasedIds);
+          const grouped = {};
+          for (const row of folders || []) grouped[row.bundle_id] = row;
+          setDriveFolders(grouped);
+        }
 
         // For each purchased bundle, fetch the videos it actually grants
         // access to. RLS (see "founders can read videos in bundles they
@@ -378,6 +394,29 @@ export default function FounderDashboard() {
                 <h3>{bundle.name}</h3>
                 {bundle.description && <p className={styles.bio}>{bundle.description}</p>}
                 <div className={styles.libraryMeta}><span>{bundle.videos.length} clips</span><strong>{formatPrice(bundle.price_cents)} paid</strong></div>
+                {(() => {
+                  const folder = driveFolders[bundle.id];
+                  if (folder?.status === "ready" && folder.drive_folder_url) {
+                    return (
+                      <a
+                        href={folder.drive_folder_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={styles.primaryAction}
+                        style={{ display: "inline-block", marginTop: 10, textAlign: "center", textDecoration: "none" }}
+                      >
+                        📁 Download all in Google Drive
+                      </a>
+                    );
+                  }
+                  if (folder?.status === "creating" || folder?.status === "pending") {
+                    return <p style={{ fontSize: 12.5, color: "#999", marginTop: 10 }}>Preparing your files for download…</p>;
+                  }
+                  if (folder?.status === "failed") {
+                    return <p style={{ fontSize: 12.5, color: "#c43f50", marginTop: 10 }}>We hit a snag preparing the full download — use the per-clip links below, or contact support.</p>;
+                  }
+                  return null;
+                })()}
                 <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 10 }}>
                   {bundle.videos.map((video) => (
                     <div key={video.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderTop: "1px solid #eee" }}>

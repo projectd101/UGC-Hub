@@ -19,6 +19,17 @@ function formatPrice(cents) {
   return `$${(cents / 100).toFixed(2)}`;
 }
 
+// Creators never see the folder link itself here (RLS reveals it to the
+// creator too, but there's nothing for them to do with it before a founder
+// has bought anything) — just enough status to know upload/moving is done.
+function DriveFolderStatus({ folder }) {
+  if (!folder) return null;
+  if (folder.status === "creating") return <span className={styles.lockedLabel} title="Creating a Drive folder for this bundle's clips">📁 Preparing files…</span>;
+  if (folder.status === "ready") return <span className={styles.lockedLabel} title="All clips are in a dedicated Drive folder, ready for the buyer">📁 Files ready</span>;
+  if (folder.status === "failed") return <span className={styles.lockedLabel} style={{ color: "#c43f50" }} title={folder.error_message || "Something went wrong preparing the Drive folder"}>⚠ Drive folder failed</span>;
+  return null;
+}
+
 export default function CreatorDashboard() {
   const { user, signOut } = useAuth();
   const [creator, setCreator] = useState(null);
@@ -34,6 +45,9 @@ export default function CreatorDashboard() {
   const [libraryVideoIds, setLibraryVideoIds] = useState({}); // { [libraryId]: string[] }
   const [bundles, setBundles] = useState([]);
   const [pricePerClipCents, setPricePerClipCents] = useState(40);
+  // { [bundleId]: { status: "pending"|"creating"|"ready"|"failed", drive_folder_url, error_message } }
+  const [driveFolders, setDriveFolders] = useState({});
+  const [publishingBundleId, setPublishingBundleId] = useState(null);
 
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState(null);
@@ -78,6 +92,21 @@ export default function CreatorDashboard() {
       setLibraries(librariesRes.data || []);
       setBundles(bundlesRes.data || []);
       if (settingsRes.data) setPricePerClipCents(settingsRes.data.price_per_clip_cents);
+
+      // Drive folder status for already-published bundles (RLS: creators can
+      // only read the row for their own bundles — see migration).
+      const publishedBundleIds = (bundlesRes.data || []).filter((b) => b.status === "published").map((b) => b.id);
+      if (publishedBundleIds.length) {
+        const { data: folders } = await supabase
+          .from("bundle_drive_folders")
+          .select("bundle_id, status, drive_folder_url, error_message")
+          .in("bundle_id", publishedBundleIds);
+        if (!cancelled && folders) {
+          const grouped = {};
+          for (const row of folders) grouped[row.bundle_id] = row;
+          setDriveFolders(grouped);
+        }
+      }
 
       const libraryIds = (librariesRes.data || []).map((l) => l.id);
       if (libraryIds.length) {
@@ -360,9 +389,60 @@ export default function CreatorDashboard() {
     if (bundle.status === "published") return;
     const ids = libraryVideoIds[bundle.library_id] || [];
     if (!ids.length) return window.alert("Add at least one video before publishing this bundle.");
+
+    // Publishing locks the bundle at the database level (see the
+    // bundle_locking_and_drive_folders migration): once status flips to
+    // "published" here, video_count/price_cents freeze permanently and no
+    // video can be added to or removed from it, even via a direct API call.
+    setPublishingBundleId(bundle.id);
     const { error } = await supabase.from("bundles").update({ status: "published" }).eq("id", bundle.id);
-    if (error) return window.alert(`Couldn't publish bundle: ${error.message}`);
+    if (error) {
+      setPublishingBundleId(null);
+      return window.alert(`Couldn't publish bundle: ${error.message}`);
+    }
     setBundles((current) => current.map((item) => item.id === bundle.id ? { ...item, status: "published" } : item));
+    setDriveFolders((current) => ({ ...current, [bundle.id]: { status: "creating" } }));
+
+    // Kick off the per-bundle Google Drive folder now that the content is
+    // locked. The folder link itself is never shown to the creator's own
+    // dashboard beyond a "ready" status — RLS gates the actual URL to
+    // founders who've paid — but we still poll so the creator can see when
+    // it's done.
+    createBundleDriveFolder(bundle.id);
+    setPublishingBundleId(null);
+  }
+
+  async function createBundleDriveFolder(bundleId, attempt = 0) {
+    const { data: sessionData } = await supabase.auth.getSession();
+    const accessToken = sessionData?.session?.access_token;
+    if (!accessToken) return;
+
+    try {
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-bundle-drive-folder`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+        body: JSON.stringify({ bundle_id: bundleId }),
+      });
+      const body = await res.json();
+
+      if (!res.ok) {
+        setDriveFolders((current) => ({ ...current, [bundleId]: { status: "failed", error_message: body.error } }));
+        return;
+      }
+
+      setDriveFolders((current) => ({
+        ...current,
+        [bundleId]: { status: body.status, drive_folder_url: body.drive_folder_url, error_message: body.failed_videos?.length ? body.failed_videos.join("; ") : null },
+      }));
+    } catch (err) {
+      // Transient network hiccup — retry a couple of times before giving up
+      // and letting the creator know something needs attention.
+      if (attempt < 2) {
+        setTimeout(() => createBundleDriveFolder(bundleId, attempt + 1), 4000);
+        return;
+      }
+      setDriveFolders((current) => ({ ...current, [bundleId]: { status: "failed", error_message: err.message } }));
+    }
   }
 
   const previewBundlePrice = useMemo(() => ({
@@ -453,7 +533,7 @@ export default function CreatorDashboard() {
                 const thumbs = ids.map((id) => videos.find((video) => video.id === id)).filter(Boolean).slice(0, 3);
                 return <article className={styles.bundleCard} key={bundle.id}>
                   <div className={styles.thumbStrip}>{thumbs.map((video) => video.previewUrl ? <video key={video.id} src={video.previewUrl} muted playsInline /> : <div key={video.id} className={styles.thumbPlaceholder} />)}</div>
-                  <div className={styles.bundleCardBody}><div className={styles.bundleTop}><div><h3>{bundle.name}</h3><p>{ids.length} videos · {bundle.status === "published" ? "Public" : "Draft"}</p></div><strong>{formatPrice(bundle.price_cents || ids.length * pricePerClipCents)}</strong></div><div className={styles.bundleMeta}><span className={bundle.status === "published" ? styles.publishedBadge : styles.draftBadge}>{bundle.status === "published" ? "Published" : "Draft"}</span>{bundle.status === "published" ? <span className={styles.lockedLabel}>🔒 Locked</span> : <><button onClick={() => startEditingBundle(bundle)}>Edit</button><button onClick={() => publishBundle(bundle)}>Publish</button></>}</div></div>
+                  <div className={styles.bundleCardBody}><div className={styles.bundleTop}><div><h3>{bundle.name}</h3><p>{ids.length} videos · {bundle.status === "published" ? "Public" : "Draft"}</p></div><strong>{formatPrice(bundle.price_cents || ids.length * pricePerClipCents)}</strong></div><div className={styles.bundleMeta}><span className={bundle.status === "published" ? styles.publishedBadge : styles.draftBadge}>{bundle.status === "published" ? "Published" : "Draft"}</span>{bundle.status === "published" ? <><span className={styles.lockedLabel}>🔒 Locked</span><DriveFolderStatus folder={driveFolders[bundle.id]} /></> : <><button onClick={() => startEditingBundle(bundle)}>Edit</button><button onClick={() => publishBundle(bundle)} disabled={publishingBundleId === bundle.id}>{publishingBundleId === bundle.id ? "Publishing…" : "Publish"}</button></>}</div></div>
                 </article>;
               })}</div>}
             </div>
@@ -482,7 +562,7 @@ export default function CreatorDashboard() {
               <div className={styles.formFooter}><span>Your price is {formatPrice(pricePerClipCents)} per clip · {bundleVideoIds.length ? formatPrice(previewBundlePrice.priceCents) : "$0.00"} total</span><button className={styles.primaryAction} type="submit" disabled={!bundleName.trim() || !bundleVideoIds.length}>{editingBundleId ? "Save Bundle" : "Create Bundle"}</button></div>
             </form>
 
-            <div className={styles.sectionCard}><div className={styles.sectionHeading}><div><h2>Your Bundles</h2><p>Finish draft bundles, then publish to lock their video selection.</p></div></div>{!bundles.length ? <div className={styles.emptyCreatorState}><strong>No bundles yet</strong><span>Your finished bundles will appear here.</span></div> : <div className={styles.bundleGrid}>{bundles.map((bundle) => { const ids = libraryVideoIds[bundle.library_id] || []; return <article className={styles.bundleListCard} key={bundle.id}><div><strong>{bundle.name}</strong><span>{ids.length} videos · {bundle.status === "published" ? "Published and locked" : "Draft"}</span></div><b>{formatPrice(bundle.price_cents || ids.length * pricePerClipCents)}</b>{bundle.status === "published" ? <span className={styles.lockedLabel}>🔒 Locked</span> : <div className={styles.bundleListActions}><button onClick={() => startEditingBundle(bundle)}>Edit</button><button onClick={() => publishBundle(bundle)}>Publish</button></div>}</article>; })}</div>}</div>
+            <div className={styles.sectionCard}><div className={styles.sectionHeading}><div><h2>Your Bundles</h2><p>Finish draft bundles, then publish to lock their video selection.</p></div></div>{!bundles.length ? <div className={styles.emptyCreatorState}><strong>No bundles yet</strong><span>Your finished bundles will appear here.</span></div> : <div className={styles.bundleGrid}>{bundles.map((bundle) => { const ids = libraryVideoIds[bundle.library_id] || []; return <article className={styles.bundleListCard} key={bundle.id}><div><strong>{bundle.name}</strong><span>{ids.length} videos · {bundle.status === "published" ? "Published and locked" : "Draft"}</span></div><b>{formatPrice(bundle.price_cents || ids.length * pricePerClipCents)}</b>{bundle.status === "published" ? <div className={styles.bundleListActions}><span className={styles.lockedLabel}>🔒 Locked</span><DriveFolderStatus folder={driveFolders[bundle.id]} /></div> : <div className={styles.bundleListActions}><button onClick={() => startEditingBundle(bundle)}>Edit</button><button onClick={() => publishBundle(bundle)} disabled={publishingBundleId === bundle.id}>{publishingBundleId === bundle.id ? "Publishing…" : "Publish"}</button></div>}</article>; })}</div>}</div>
           </section>}
         </main>
       </div>
