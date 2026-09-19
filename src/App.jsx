@@ -60,7 +60,7 @@ function Router() {
       <PurchaseConfirmationGate
         userId={profile.id}
         bundleId={bundleId}
-        onDone={() => { window.history.replaceState({}, "", "/"); window.location.reload(); }}
+        onDone={() => { window.location.href = "/"; }}
       />
     );
   }

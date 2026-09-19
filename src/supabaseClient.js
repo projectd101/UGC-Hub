@@ -9,4 +9,12 @@ if (!url || !anonKey) {
   );
 }
 
-export const supabase = createClient(url, anonKey);
+export const supabase = createClient(url, anonKey, {
+  auth: {
+    // Payment-provider return URLs (Dodo) can carry query params that look
+    // like OAuth callback params. Without this, supabase-js's URL scan on
+    // load can misinterpret them and clear a valid session, kicking a
+    // just-paid user back to the signed-out landing page.
+    detectSessionInUrl: false,
+  },
+});
