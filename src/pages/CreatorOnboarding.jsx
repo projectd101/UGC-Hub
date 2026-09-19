@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "../supabaseClient";
 import { useAuth } from "../lib/AuthContext";
 import styles from "./Onboarding.module.css";
@@ -27,11 +27,11 @@ const NICHE_OPTIONS = [
   "Education",
 ];
 
-const PLAN_PRICE_CENTS = 1900; // $19/mo flat — dummy for now
+const PLAN_PRICE_CENTS = 1900; // $19/mo flat
 
 export default function CreatorOnboarding() {
   const { user } = useAuth();
-  const [step, setStep] = useState("profile"); // "profile" | "plan" | "pending"
+  const [step, setStep] = useState("checking"); // "checking" | "profile" | "plan" | "pending"
   const [creatorId, setCreatorId] = useState(null);
 
   const [displayName, setDisplayName] = useState("");
@@ -42,6 +42,32 @@ export default function CreatorOnboarding() {
   const [sampleUrls, setSampleUrls] = useState(["", "", ""]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
+
+  // A creator row may already exist from a previous, incomplete onboarding
+  // attempt (e.g. the person's session dropped after the profile step but
+  // before they finished checkout). Resume from "plan" in that case instead
+  // of re-showing the profile form, which would hit the creators_user_id
+  // unique constraint on resubmit.
+  useEffect(() => {
+    let cancelled = false;
+    supabase
+      .from("creators")
+      .select("id")
+      .eq("user_id", user.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (cancelled) return;
+        if (data?.id) {
+          setCreatorId(data.id);
+          setStep("plan");
+        } else {
+          setStep("profile");
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [user.id]);
 
   function toggle(list, setList, value) {
     setList(
@@ -136,6 +162,16 @@ export default function CreatorOnboarding() {
 
 
 
+  if (step === "checking") {
+    return (
+      <div className={styles.wrap}>
+        <div className={styles.card}>
+          <p className={styles.sub}>Loading…</p>
+        </div>
+      </div>
+    );
+  }
+
   if (step === "plan") {
     return (
       <div className={styles.wrap}>
@@ -162,11 +198,6 @@ export default function CreatorOnboarding() {
               <span className={styles.priceUnit}>/mo</span>
             </span>
           </div>
-
-          <p className={styles.dummyNote}>
-            Payments aren't live yet — this activates your account without
-            charging you.
-          </p>
 
           {error && <p className={styles.error}>{error}</p>}
 
