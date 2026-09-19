@@ -11,7 +11,6 @@ function MenuIcon() { return <span className={styles.menuGlyph} aria-hidden="tru
 function BellIcon() { return <span className={styles.bellGlyph} aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg></span>; }
 function WalletIcon() { return <span className={styles.walletGlyph} aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4H19a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H6.5A2.5 2.5 0 0 1 4 17.5z"/><path d="M4 7h14.5A2.5 2.5 0 0 1 21 9.5v5H16a2.5 2.5 0 0 1 0-5h5"/><circle cx="16" cy="12" r=".7" fill="currentColor" stroke="none"/></svg></span>; }
 function UploadIcon() { return <span className={styles.featureIcon} aria-hidden="true">↑</span>; }
-function LibraryIcon() { return <span className={styles.featureIcon} aria-hidden="true">▦</span>; }
 function BundleIcon() { return <span className={styles.featureIcon} aria-hidden="true">◈</span>; }
 
 const VIDEO_BUCKET = "creator-videos";
@@ -41,11 +40,10 @@ export default function CreatorDashboard() {
   const [uploadStatus, setUploadStatus] = useState(null);
   const [selectedEmotion, setSelectedEmotion] = useState("Happy");
   const [selectedNiche, setSelectedNiche] = useState("Reaction");
-  const [libraryName, setLibraryName] = useState("");
-  const [libraryDescription, setLibraryDescription] = useState("");
   const [bundleName, setBundleName] = useState("");
   const [bundleDescription, setBundleDescription] = useState("");
-  const [bundleLibrary, setBundleLibrary] = useState("");
+  const [bundleVideoIds, setBundleVideoIds] = useState([]);
+  const [editingBundleId, setEditingBundleId] = useState(null);
   const fileInput = useRef(null);
 
   // Load creator row + all their content on mount.
@@ -127,10 +125,9 @@ export default function CreatorDashboard() {
 
   const stats = useMemo(() => ({
     videos: videos.length,
-    libraries: libraries.length,
     bundles: bundles.length,
-    published: videos.filter((video) => video.status === "published").length,
-  }), [videos, libraries, bundles]);
+    publishedBundles: bundles.filter((bundle) => bundle.status === "published").length,
+  }), [videos, bundles]);
 
   function closePanels() { setDrawerOpen(false); setNotificationsOpen(false); setWalletOpen(false); setActivePanel(null); }
   function openMenu(panel = null) { setNotificationsOpen(false); setWalletOpen(false); setDrawerOpen(true); setActivePanel(panel); }
@@ -244,6 +241,11 @@ export default function CreatorDashboard() {
   async function removeVideo(id) {
     const video = videos.find((v) => v.id === id);
     if (!video) return;
+    const locked = bundles.some((bundle) => bundle.status === "published" && (libraryVideoIds[bundle.library_id] || []).includes(id));
+    if (locked) {
+      window.alert("This video is part of a published bundle and is locked.");
+      return;
+    }
     const confirmed = window.confirm(`Remove "${video.name}"? This can't be undone.`);
     if (!confirmed) return;
 
@@ -263,93 +265,110 @@ export default function CreatorDashboard() {
     });
   }
 
-  async function createLibrary(event) {
+  function startNewBundle() {
+    setEditingBundleId(null);
+    setBundleName("");
+    setBundleDescription("");
+    setBundleVideoIds([]);
+    setTab("bundles");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function startEditingBundle(bundle) {
+    if (bundle.status === "published") return;
+    setEditingBundleId(bundle.id);
+    setBundleName(bundle.name || "");
+    setBundleDescription(bundle.description || "");
+    setBundleVideoIds(libraryVideoIds[bundle.library_id] || []);
+    setTab("bundles");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function toggleBundleVideo(videoId) {
+    setBundleVideoIds((current) => current.includes(videoId) ? current.filter((id) => id !== videoId) : [...current, videoId]);
+  }
+
+  async function saveBundle(event) {
     event.preventDefault();
-    if (!libraryName.trim() || !creator) return;
+    if (!bundleName.trim() || !creator || !bundleVideoIds.length) return;
 
-    const { data: library, error } = await supabase
-      .from("libraries")
-      .insert({ creator_id: creator.id, name: libraryName.trim(), description: libraryDescription.trim() || null })
-      .select()
-      .single();
-
-    if (error) {
-      window.alert(`Couldn't create library: ${error.message}`);
+    if (editingBundleId) {
+      const bundle = bundles.find((item) => item.id === editingBundleId);
+      if (!bundle || bundle.status === "published") return;
+      const libraryId = bundle.library_id;
+      const existingIds = libraryVideoIds[libraryId] || [];
+      const selected = new Set(bundleVideoIds);
+      const existing = new Set(existingIds);
+      const toAdd = bundleVideoIds.filter((id) => !existing.has(id));
+      const toRemove = existingIds.filter((id) => !selected.has(id));
+      if (toAdd.length) {
+        const { error } = await supabase.from("library_videos").insert(toAdd.map((video_id) => ({ library_id: libraryId, video_id })));
+        if (error) return window.alert(`Couldn't update bundle videos: ${error.message}`);
+      }
+      if (toRemove.length) {
+        const { error } = await supabase.from("library_videos").delete().eq("library_id", libraryId).in("video_id", toRemove);
+        if (error) return window.alert(`Couldn't remove bundle videos: ${error.message}`);
+      }
+      const { data: updatedBundle, error: updateError } = await supabase.from("bundles").update({ name: bundleName.trim(), description: bundleDescription.trim() || null }).eq("id", bundle.id).select().single();
+      if (updateError) return window.alert(`Couldn't save bundle: ${updateError.message}`);
+      setLibraryVideoIds((current) => ({ ...current, [libraryId]: [...bundleVideoIds] }));
+      setBundles((current) => current.map((item) => item.id === bundle.id ? updatedBundle : item));
+      setEditingBundleId(null);
+      setBundleName("");
+      setBundleDescription("");
+      setBundleVideoIds([]);
       return;
     }
 
-    // New library starts with all current videos, mirroring prior behavior.
-    if (videos.length) {
-      const rows = videos.map((v) => ({ library_id: library.id, video_id: v.id }));
-      await supabase.from("library_videos").insert(rows);
-      setLibraryVideoIds((current) => ({ ...current, [library.id]: videos.map((v) => v.id) }));
-    } else {
-      setLibraryVideoIds((current) => ({ ...current, [library.id]: [] }));
+    // Keep the existing database model intact: libraries/library_videos remain
+    // the internal membership mechanism, while the dashboard no longer exposes
+    // "libraries" as a product concept.
+    const { data: library, error: libraryError } = await supabase.from("libraries").insert({
+      creator_id: creator.id,
+      name: bundleName.trim(),
+      description: bundleDescription.trim() || null,
+    }).select().single();
+    if (libraryError) return window.alert(`Couldn't create bundle: ${libraryError.message}`);
+
+    const { error: membershipError } = await supabase.from("library_videos").insert(bundleVideoIds.map((video_id) => ({ library_id: library.id, video_id })));
+    if (membershipError) {
+      await supabase.from("libraries").delete().eq("id", library.id);
+      return window.alert(`Couldn't add videos to bundle: ${membershipError.message}`);
+    }
+
+    const { data: bundle, error: bundleError } = await supabase.from("bundles").insert({
+      creator_id: creator.id,
+      library_id: library.id,
+      name: bundleName.trim(),
+      description: bundleDescription.trim() || null,
+    }).select().single();
+    if (bundleError) {
+      await supabase.from("library_videos").delete().eq("library_id", library.id);
+      await supabase.from("libraries").delete().eq("id", library.id);
+      return window.alert(`Couldn't create bundle: ${bundleError.message}`);
     }
 
     setLibraries((current) => [library, ...current]);
-    setLibraryName("");
-    setLibraryDescription("");
-    setTab("libraries");
-  }
-
-  async function createBundle(event) {
-    event.preventDefault();
-    if (!bundleName.trim() || !creator) return;
-
-    const library = libraries.find((item) => item.id === bundleLibrary) || null;
-
-    // video_count / price_cents are recomputed server-side by a trigger;
-    // the values sent here are placeholders that the DB will overwrite.
-    const { data: bundle, error } = await supabase
-      .from("bundles")
-      .insert({
-        creator_id: creator.id,
-        library_id: library?.id || null,
-        name: bundleName.trim(),
-        description: bundleDescription.trim() || null,
-      })
-      .select()
-      .single();
-
-    if (error) {
-      window.alert(`Couldn't create bundle: ${error.message}`);
-      return;
-    }
-
+    setLibraryVideoIds((current) => ({ ...current, [library.id]: [...bundleVideoIds] }));
     setBundles((current) => [bundle, ...current]);
     setBundleName("");
     setBundleDescription("");
-    setBundleLibrary("");
-    setTab("bundles");
+    setBundleVideoIds([]);
   }
 
-  async function toggleVideoPublished(video) {
-    const nextStatus = video.status === "published" ? "draft" : "published";
-    const { error } = await supabase.from("videos").update({ status: nextStatus }).eq("id", video.id);
-    if (error) return window.alert(`Couldn't update video: ${error.message}`);
-    setVideos((current) => current.map((v) => (v.id === video.id ? { ...v, status: nextStatus } : v)));
+  async function publishBundle(bundle) {
+    if (bundle.status === "published") return;
+    const ids = libraryVideoIds[bundle.library_id] || [];
+    if (!ids.length) return window.alert("Add at least one video before publishing this bundle.");
+    const { error } = await supabase.from("bundles").update({ status: "published" }).eq("id", bundle.id);
+    if (error) return window.alert(`Couldn't publish bundle: ${error.message}`);
+    setBundles((current) => current.map((item) => item.id === bundle.id ? { ...item, status: "published" } : item));
   }
 
-  async function toggleLibraryPublished(library) {
-    const nextStatus = library.status === "published" ? "draft" : "published";
-    const { error } = await supabase.from("libraries").update({ status: nextStatus }).eq("id", library.id);
-    if (error) return window.alert(`Couldn't update library: ${error.message}`);
-    setLibraries((current) => current.map((l) => (l.id === library.id ? { ...l, status: nextStatus } : l)));
-  }
-
-  async function toggleBundlePublished(bundle) {
-    const nextStatus = bundle.status === "published" ? "draft" : "published";
-    const { error } = await supabase.from("bundles").update({ status: nextStatus }).eq("id", bundle.id);
-    if (error) return window.alert(`Couldn't update bundle: ${error.message}`);
-    setBundles((current) => current.map((b) => (b.id === bundle.id ? { ...b, status: nextStatus } : b)));
-  }
-
-  const previewBundlePrice = useMemo(() => {
-    const library = libraries.find((item) => item.id === bundleLibrary);
-    const count = library ? (libraryVideoIds[library.id]?.length || 0) : videos.length;
-    return { count, priceCents: count * pricePerClipCents };
-  }, [bundleLibrary, libraries, libraryVideoIds, videos.length, pricePerClipCents]);
+  const previewBundlePrice = useMemo(() => ({
+    count: bundleVideoIds.length,
+    priceCents: bundleVideoIds.length * pricePerClipCents,
+  }), [bundleVideoIds.length, pricePerClipCents]);
 
   if (loading) {
     return <div className={styles.wrap}><main className={styles.main}><p className={styles.subtitle}>Loading your studio…</p></main></div>;
@@ -362,61 +381,111 @@ export default function CreatorDashboard() {
   return (
     <div className={styles.wrap}>
       {(drawerOpen || notificationsOpen || walletOpen) && <button className={styles.backdrop} aria-label="Close" onClick={closePanels} />}
-      <header className={styles.header}>
+
+      <aside className={styles.sidebar}>
         <a href="/" className={`${styles.logo} ugcBrandMark`} aria-label="UGC Hub home"><span className="ugcBrandMark__ugc">UGC</span><span className="ugcBrandMark__hub">Hub</span></a>
-        <div className={styles.headerActions}>
-          <button className={styles.iconButton} aria-label="Wallet" aria-expanded={walletOpen} onClick={() => { closePanels(); setWalletOpen(true); }}><WalletIcon /></button>
-          <button className={styles.iconButton} aria-label="Notifications" aria-expanded={notificationsOpen} onClick={() => { closePanels(); setNotificationsOpen(true); }}><BellIcon /><span className={styles.notificationDot} /></button>
-          <button className={styles.iconButton} aria-label="Account menu" aria-expanded={drawerOpen} onClick={() => (drawerOpen ? closePanels() : openMenu())}><MenuIcon /></button>
-          <button className={styles.signOut} onClick={signOut}>Sign out</button>
-        </div>
-      </header>
-
-      {walletOpen && <aside className={styles.notificationPanel} aria-label="Wallet"><div className={styles.panelHeader}><div><span className={styles.panelEyebrow}>Creator earnings</span><h2>Wallet</h2></div><button className={styles.closeButton} onClick={closePanels}>×</button></div><div className={styles.walletBalance}><span>Available balance</span><strong>$0.00</strong><small>Earnings and payout status will appear here once your reaction libraries generate revenue.</small></div><button className={styles.walletAction} onClick={() => { setWalletOpen(false); openMenu("payouts"); }}>Set up payouts</button></aside>}
-      {notificationsOpen && <aside className={styles.notificationPanel} aria-label="Notifications"><div className={styles.panelHeader}><div><span className={styles.panelEyebrow}>Updates</span><h2>Notifications</h2></div><button className={styles.closeButton} onClick={closePanels}>×</button></div><div className={styles.emptyState}><BellIcon /><strong>You're all caught up</strong><span>New founder activity, library updates and payout notifications will appear here.</span></div></aside>}
-
-      <aside className={`${styles.drawer} ${drawerOpen ? styles.drawerOpen : ""}`} aria-hidden={!drawerOpen}>
-        <div className={styles.drawerHeader}><div><span className={styles.panelEyebrow}>Creator account</span><h2>Menu</h2></div><button className={styles.closeButton} onClick={closePanels}>×</button></div>
-        <div className={styles.accountCard}><div className={styles.accountAvatar}>{(creator?.display_name || user?.email || "C").charAt(0).toUpperCase()}</div><div><strong>{creator?.display_name || "Creator"}</strong><span>{user?.email || "Creator account"}</span></div></div>
-        <nav className={styles.drawerNav}>
-          <button className={styles.drawerItem} onClick={() => setActivePanel("profile")}><span>Account information</span><b>›</b></button>
-          <button className={styles.drawerItem} onClick={() => setActivePanel("history")}><span>History</span><b>›</b></button>
-          <button className={styles.drawerItem} onClick={() => setActivePanel("payouts")}><span>Payouts</span><b>›</b></button>
+        <nav className={styles.sidebarNav} aria-label="Creator navigation">
+          <button className={tab === "overview" ? styles.sidebarItemActive : styles.sidebarItem} onClick={() => goTo("overview")}><span className={styles.navIcon}>⌂</span>Overview</button>
+          <button className={tab === "videos" ? styles.sidebarItemActive : styles.sidebarItem} onClick={() => goTo("videos")}><span className={styles.navIcon}>▷</span>Videos <b>{stats.videos}</b></button>
+          <button className={tab === "bundles" ? styles.sidebarItemActive : styles.sidebarItem} onClick={() => goTo("bundles")}><span className={styles.navIcon}>◈</span>Bundles <b>{stats.bundles}</b></button>
+          <button className={styles.sidebarItem} onClick={() => openMenu("profile")}><span className={styles.navIcon}>⚙</span>Settings</button>
         </nav>
-        {activePanel && <div className={styles.drawerDetail}><span className={styles.panelEyebrow}>{activePanel === "profile" ? "Account" : activePanel === "history" ? "Activity" : "Payments"}</span><h3>{activePanel === "profile" ? "Account information" : activePanel === "history" ? "History" : "Payouts"}</h3><p>{activePanel === "profile" ? "Your creator account details and public profile settings will live here." : activePanel === "history" ? "Your library activity, uploads and account history will appear here." : "Set up how UGC Hub should send your earnings. Your payout method will be stored securely when payments are connected."}</p>{activePanel === "payouts" && <button className={styles.walletAction}>Set up payout method</button>}</div>}
-        <div className={styles.drawerFooter}><button className={`${styles.drawerItem} ${styles.deleteItem}`} onClick={handleDeleteAccount}><span>Delete account</span><b>›</b></button></div>
+        <div className={styles.sidebarDivider} />
+        <span className={styles.quickLabel}>Quick actions</span>
+        <div className={styles.quickActions}>
+          <button className={styles.quickAction} onClick={() => goTo("videos")}><span>↑</span>Upload Video</button>
+          <button className={styles.quickAction} onClick={startNewBundle}><span>◈</span>Create Bundle</button>
+        </div>
+        <button className={styles.sidebarAccount} onClick={() => openMenu("profile")}>
+          <span className={styles.accountAvatar}>{(creator?.display_name || user?.email || "C").charAt(0).toUpperCase()}</span>
+          <span><strong>{creator?.display_name || "Creator"}</strong><small>{user?.email || "Creator account"}</small></span>
+          <b>›</b>
+        </button>
       </aside>
 
-      <main className={styles.main}>
-        <div className={styles.profileSummary}><div><span className={styles.panelEyebrow}>Creator studio</span><h1 className={styles.title}>{creator?.display_name || "Creator"}</h1><p className={styles.subtitle}>Upload reactions, organize libraries, build bundles, and keep your storefront ready for founders.</p></div><span className={styles.activeBadge}>Active</span></div>
-        <nav className={styles.creatorTabs} aria-label="Creator studio"><button className={tab === "overview" ? styles.creatorTabActive : styles.creatorTab} onClick={() => setTab("overview")}>Overview</button><button className={tab === "videos" ? styles.creatorTabActive : styles.creatorTab} onClick={() => setTab("videos")}>Videos <b>{stats.videos}</b></button><button className={tab === "libraries" ? styles.creatorTabActive : styles.creatorTab} onClick={() => setTab("libraries")}>Libraries <b>{stats.libraries}</b></button><button className={tab === "bundles" ? styles.creatorTabActive : styles.creatorTab} onClick={() => setTab("bundles")}>Bundles <b>{stats.bundles}</b></button></nav>
+      <div className={styles.appArea}>
+        <header className={styles.header}>
+          <div className={styles.mobileBrand}><a href="/" className={`${styles.logo} ugcBrandMark`} aria-label="UGC Hub home"><span className="ugcBrandMark__ugc">UGC</span><span className="ugcBrandMark__hub">Hub</span></a></div>
+          <div className={styles.headerActions}>
+            <button className={styles.iconButton} aria-label="Wallet" aria-expanded={walletOpen} onClick={() => { closePanels(); setWalletOpen(true); }}><WalletIcon /></button>
+            <button className={styles.iconButton} aria-label="Notifications" aria-expanded={notificationsOpen} onClick={() => { closePanels(); setNotificationsOpen(true); }}><BellIcon /><span className={styles.notificationDot} /></button>
+            <button className={styles.signOut} onClick={signOut}>Sign out</button>
+          </div>
+        </header>
 
-        {tab === "overview" && <section className={styles.studioSection}>
-          <div className={styles.statsGrid}><div className={styles.statCard}><span>Videos</span><strong>{stats.videos}</strong><small>{stats.published} published</small></div><div className={styles.statCard}><span>Libraries</span><strong>{stats.libraries}</strong><small>Curated collections</small></div><div className={styles.statCard}><span>Bundles</span><strong>{stats.bundles}</strong><small>Ready to sell</small></div><div className={styles.statCard}><span>Wallet</span><strong>$0</strong><small>Available balance</small></div></div>
-          <div className={styles.featureGrid}><button className={styles.featureCard} onClick={() => goTo("videos")}><UploadIcon /><span><strong>Upload videos</strong><small>Add reaction clips and tag each one by emotion and niche.</small></span><b>→</b></button><button className={styles.featureCard} onClick={() => goTo("libraries")}><LibraryIcon /><span><strong>Build a library</strong><small>Group videos into a creator library founders can browse.</small></span><b>→</b></button><button className={styles.featureCard} onClick={() => goTo("bundles")}><BundleIcon /><span><strong>Make a bundle</strong><small>Package a library into a paid clip collection, priced at {formatPrice(pricePerClipCents)}/clip.</small></span><b>→</b></button></div>
-          <div className={styles.studioCallout}><div><span className={styles.panelEyebrow}>Creator workflow</span><h2>Build once. Sell repeatedly.</h2><p>Keep individual clips organized, assemble them into libraries, then turn those libraries into bundles for founders.</p></div><button className={styles.walletAction} onClick={() => goTo("videos")}>Start uploading</button></div>
-        </section>}
+        {walletOpen && <aside className={styles.notificationPanel} aria-label="Wallet"><div className={styles.panelHeader}><div><span className={styles.panelEyebrow}>Creator earnings</span><h2>Wallet</h2></div><button className={styles.closeButton} onClick={closePanels}>×</button></div><div className={styles.walletBalance}><span>Available balance</span><strong>$0.00</strong><small>Earnings and payout status will appear here once your bundles generate revenue.</small></div><button className={styles.walletAction} onClick={() => { setWalletOpen(false); openMenu("payouts"); }}>Set up payouts</button></aside>}
+        {notificationsOpen && <aside className={styles.notificationPanel} aria-label="Notifications"><div className={styles.panelHeader}><div><span className={styles.panelEyebrow}>Updates</span><h2>Notifications</h2></div><button className={styles.closeButton} onClick={closePanels}>×</button></div><div className={styles.emptyState}><BellIcon /><strong>You're all caught up</strong><span>There are no new notifications.</span></div></aside>}
 
-        {tab === "videos" && <section className={styles.studioSection}>
-          <div className={styles.sectionHeading}><div><h2>Videos</h2><p>Your individual reaction clips. Add metadata now so they can be organized into libraries and bundles later.</p></div><button className={styles.primaryAction} onClick={() => fileInput.current?.click()} disabled={uploading}><UploadIcon /> {uploading ? "Uploading…" : "Upload videos"}</button></div>
-          <div className={styles.uploadControls}><label>Emotion<select value={selectedEmotion} onChange={(e) => setSelectedEmotion(e.target.value)}>{EMOTIONS.map((item) => <option key={item}>{item}</option>)}</select></label><label>Niche<select value={selectedNiche} onChange={(e) => setSelectedNiche(e.target.value)}>{NICHES.map((item) => <option key={item}>{item}</option>)}</select></label><input ref={fileInput} hidden type="file" accept="video/*" multiple onChange={(e) => { handleFiles(e.target.files); e.target.value = ""; }} /></div>
-          {uploadError && <p style={{ color: "#c43f50", fontSize: 12.5 }}>{uploadError}</p>}
-          <button className={styles.dropzone} onClick={() => fileInput.current?.click()} disabled={uploading}><span className={styles.dropzoneIcon}>↑</span><strong>{uploadStatus || "Drop videos here or click to upload"}</strong><small>MP4, MOV, WebM · 9:16 reaction clips recommended · watermarking runs in your browser and may take a few seconds per clip</small></button>
-          {!videos.length ? <div className={styles.emptyCreatorState}><strong>No videos yet</strong><span>Upload your first reaction clips to start building your library.</span></div> : <div className={styles.videoGrid}>{videos.map((video) => <article key={video.id} className={styles.videoCard}>{video.previewUrl ? <video src={video.previewUrl} muted controls playsInline /> : <div className={styles.videoPlaceholder}>Video</div>}<div className={styles.videoCardBody}><div className={styles.videoCardTop}><div><h3>{video.name}</h3><span>{video.filename}</span></div><button className={styles.moreButton} onClick={() => removeVideo(video.id)} aria-label={`Remove ${video.name}`}>×</button></div><div className={styles.pillRow}><span className={styles.pill}>{video.emotion}</span><span className={`${styles.pill} ${styles.pillViolet}`}>{video.niche}</span>{video.processing_status === "pending" && <span className={styles.pill} style={{ background: "#fff3cd", color: "#8a6d00" }}>Watermark pending</span>}{video.processing_status === "failed" && <span className={styles.pill} style={{ background: "#fde2e2", color: "#c43f50" }}>Watermark failed</span>}</div><div className={styles.videoMeta}><span>{video.status === "published" ? "Published" : "Draft"}</span><button onClick={() => toggleVideoPublished(video)}>{video.status === "published" ? "Unpublish" : "Publish"}</button></div></div></article>)}</div>}
-        </section>}
+        <aside className={`${styles.drawer} ${drawerOpen ? styles.drawerOpen : ""}`} aria-hidden={!drawerOpen}>
+          <div className={styles.drawerHeader}><div><span className={styles.panelEyebrow}>Creator account</span><h2>Menu</h2></div><button className={styles.closeButton} onClick={closePanels}>×</button></div>
+          <div className={styles.accountCard}><div className={styles.accountAvatar}>{(creator?.display_name || user?.email || "C").charAt(0).toUpperCase()}</div><div><strong>{creator?.display_name || "Creator"}</strong><span>{user?.email || "Creator account"}</span></div></div>
+          <nav className={styles.drawerNav}>
+            <button className={styles.drawerItem} onClick={() => setActivePanel("profile")}><span>Account information</span><b>›</b></button>
+            <button className={styles.drawerItem} onClick={() => setActivePanel("payouts")}><span>Payouts</span><b>›</b></button>
+          </nav>
+          {activePanel && <div className={styles.drawerDetail}><span className={styles.panelEyebrow}>{activePanel === "profile" ? "Account" : "Payments"}</span><h3>{activePanel === "profile" ? "Account information" : "Payouts"}</h3><p>{activePanel === "profile" ? "Your creator account details and public profile settings will live here." : "Set up how UGC Hub should send your earnings. Your payout method will be stored securely when payments are connected."}</p>{activePanel === "payouts" && <button className={styles.walletAction}>Set up payout method</button>}</div>}
+          <div className={styles.drawerFooter}><button className={`${styles.drawerItem} ${styles.deleteItem}`} onClick={handleDeleteAccount}><span>Delete account</span><b>›</b></button></div>
+        </aside>
 
-        {tab === "libraries" && <section className={styles.studioSection}>
-          <div className={styles.sectionHeading}><div><h2>Libraries</h2><p>Create collections of videos around a face, emotion set, niche, campaign, or use case.</p></div></div>
-          <form className={styles.creatorForm} onSubmit={createLibrary}><div className={styles.formGrid}><label>Library name<input value={libraryName} onChange={(e) => setLibraryName(e.target.value)} placeholder="e.g. Alex — Core Reactions" /></label><label>Description<input value={libraryDescription} onChange={(e) => setLibraryDescription(e.target.value)} placeholder="Short description for founders" /></label></div><div className={styles.formFooter}><span>{videos.length} videos currently available to add</span><button className={styles.primaryAction} type="submit">Create library</button></div></form>
-          {!libraries.length ? <div className={styles.emptyCreatorState}><strong>No libraries yet</strong><span>Create your first library and it will become the structure you use to package your content.</span></div> : <div className={styles.libraryGrid}>{libraries.map((library) => <article className={styles.libraryCard} key={library.id}><div className={styles.libraryCardTop}><span className={styles.libraryMark}>▦</span><span className={library.status === "published" ? styles.publishedBadge : styles.draftBadge}>{library.status === "published" ? "Published" : "Draft"}</span></div><h3>{library.name}</h3><p>{library.description || "No description yet."}</p><div className={styles.libraryMeta}><span>{libraryVideoIds[library.id]?.length || 0} videos</span><button onClick={() => toggleLibraryPublished(library)}>{library.status === "published" ? "Unpublish" : "Publish"}</button></div></article>)}</div>}
-        </section>}
+        <main className={styles.main}>
+          <div className={styles.pageIntro}>
+            <div><span className={styles.panelEyebrow}>Creator studio</span><h1 className={styles.title}>Good morning, {creator?.display_name || "Creator"} <span className={styles.sun}>☀</span></h1><p className={styles.subtitle}>Here's what's happening with your content today.</p></div>
+          </div>
 
-        {tab === "bundles" && <section className={styles.studioSection}>
-          <div className={styles.sectionHeading}><div><h2>Bundles</h2><p>Turn a library into a product founders can buy, priced automatically at {formatPrice(pricePerClipCents)} per clip.</p></div></div>
-          <form className={styles.creatorForm} onSubmit={createBundle}><div className={styles.formGrid}><label>Bundle name<input value={bundleName} onChange={(e) => setBundleName(e.target.value)} placeholder="e.g. 100 Reaction Clips" /></label><label>Source library<select value={bundleLibrary} onChange={(e) => setBundleLibrary(e.target.value)}><option value="">All creator videos</option>{libraries.map((library) => <option key={library.id} value={library.id}>{library.name} · {libraryVideoIds[library.id]?.length || 0} videos</option>)}</select></label></div><label>Description<input value={bundleDescription} onChange={(e) => setBundleDescription(e.target.value)} placeholder="What founders get in this bundle" /></label><div className={styles.formFooter}><span>{previewBundlePrice.count} videos included · {formatPrice(previewBundlePrice.priceCents)} at ${(pricePerClipCents / 100).toFixed(2)}/clip</span><button className={styles.primaryAction} type="submit">Create bundle</button></div></form>
-          {!bundles.length ? <div className={styles.emptyCreatorState}><strong>No bundles yet</strong><span>Create a bundle after you have videos or libraries ready.</span></div> : <div className={styles.bundleGrid}>{bundles.map((bundle) => <article className={styles.bundleCard} key={bundle.id}><div className={styles.bundleTop}><span className={bundle.status === "published" ? styles.publishedBadge : styles.draftBadge}>{bundle.status === "published" ? "Published" : "Draft"}</span><strong>{formatPrice(bundle.price_cents)}</strong></div><h3>{bundle.name}</h3><p>{bundle.description || "No description yet."}</p><div className={styles.bundleMeta}><span>{bundle.video_count} videos · {libraries.find((l) => l.id === bundle.library_id)?.name || "All creator videos"}</span><button onClick={() => toggleBundlePublished(bundle)}>{bundle.status === "published" ? "Unpublish" : "Publish"}</button></div></article>)}</div>}
-        </section>}
-      </main>
+          {tab === "overview" && <section className={styles.studioSection}>
+            <div className={styles.dashboardTop}>
+              <div className={styles.statsGrid}>
+                <div className={styles.statCard}><div className={`${styles.statIcon} ${styles.statIconGreen}`}>▷</div><div><span>Total Videos</span><strong>{stats.videos}</strong><small>Content in your collection</small></div></div>
+                <div className={styles.statCard}><div className={`${styles.statIcon} ${styles.statIconGold}`}>◈</div><div><span>Bundles</span><strong>{stats.bundles}</strong><small>{stats.publishedBundles} published</small></div></div>
+                <div className={styles.statCard}><div className={`${styles.statIcon} ${styles.statIconPurple}`}>◇</div><div><span>Total Earnings</span><strong>$0.00</strong><small>Available balance</small></div></div>
+              </div>
+              <div className={styles.priceCard}><div className={styles.priceCardTop}><span className={styles.priceCheck}>✓</span><div><strong>Your Price</strong><small>per clip <button type="button" onClick={() => window.alert("Your platform clip price is currently configured by UGC Hub.")}>↗</button></small></div><span className={styles.activePrice}>Active</span></div><strong className={styles.priceValue}>{formatPrice(pricePerClipCents)}</strong></div>
+            </div>
+
+            <button className={styles.uploadHero} onClick={() => goTo("videos")}>
+              <span className={styles.uploadHeroIcon}>↑</span><span><strong>Upload Your Video</strong><small>Add a video to your collection. Then create a bundle and set your price.</small></span><b>Upload Video</b>
+            </button>
+
+            <div className={styles.sectionCard}>
+              <div className={styles.sectionHeading}><div><h2>Your Bundles</h2><p>Create bundles, set your price and publish them to start earning.</p></div><button className={styles.primaryAction} onClick={startNewBundle}><BundleIcon />Create Bundle</button></div>
+              {!bundles.length ? <div className={styles.emptyCreatorState}><strong>No bundles yet</strong><span>Upload videos, select the clips you want, then create your first bundle.</span></div> : <div className={styles.bundleGrid}>{bundles.map((bundle) => {
+                const ids = libraryVideoIds[bundle.library_id] || [];
+                const thumbs = ids.map((id) => videos.find((video) => video.id === id)).filter(Boolean).slice(0, 3);
+                return <article className={styles.bundleCard} key={bundle.id}>
+                  <div className={styles.thumbStrip}>{thumbs.map((video) => video.previewUrl ? <video key={video.id} src={video.previewUrl} muted playsInline /> : <div key={video.id} className={styles.thumbPlaceholder} />)}</div>
+                  <div className={styles.bundleCardBody}><div className={styles.bundleTop}><div><h3>{bundle.name}</h3><p>{ids.length} videos · {bundle.status === "published" ? "Public" : "Draft"}</p></div><strong>{formatPrice(bundle.price_cents || ids.length * pricePerClipCents)}</strong></div><div className={styles.bundleMeta}><span className={bundle.status === "published" ? styles.publishedBadge : styles.draftBadge}>{bundle.status === "published" ? "Published" : "Draft"}</span>{bundle.status === "published" ? <span className={styles.lockedLabel}>🔒 Locked</span> : <><button onClick={() => startEditingBundle(bundle)}>Edit</button><button onClick={() => publishBundle(bundle)}>Publish</button></>}</div></div>
+                </article>;
+              })}</div>}
+            </div>
+
+            <div className={styles.sectionCard}>
+              <div className={styles.sectionHeading}><div><h2>Available Bundles</h2><p>These bundles are visible to your audience once published.</p></div><button className={styles.textAction} onClick={() => goTo("bundles")}>View all →</button></div>
+              <div className={styles.availableGrid}>{bundles.filter((bundle) => bundle.status === "published").slice(0, 3).map((bundle) => { const ids = libraryVideoIds[bundle.library_id] || []; const thumbs = ids.map((id) => videos.find((video) => video.id === id)).filter(Boolean).slice(0, 4); return <div className={styles.availableCard} key={bundle.id}><div className={styles.availableThumbs}>{thumbs.map((video) => video.previewUrl ? <video key={video.id} src={video.previewUrl} muted playsInline /> : <div key={video.id} className={styles.thumbPlaceholder} />)}</div><div><strong>{bundle.name}</strong><small>{ids.length} videos</small></div><b>{formatPrice(bundle.price_cents || ids.length * pricePerClipCents)}</b></div>; })}</div>
+              {!bundles.some((bundle) => bundle.status === "published") && <div className={styles.availableEmpty}>Publish a bundle and it will appear here.</div>}
+            </div>
+          </section>}
+
+          {tab === "videos" && <section className={styles.studioSection}>
+            <div className={styles.sectionHeading}><div><h2>Videos</h2><p>Upload your reaction clips. Videos can be added to one or more draft bundles before publishing.</p></div><button className={styles.primaryAction} onClick={() => fileInput.current?.click()} disabled={uploading}><UploadIcon />{uploading ? "Uploading…" : "Upload Video"}</button></div>
+            <div className={styles.uploadControls}><label>Emotion<select value={selectedEmotion} onChange={(e) => setSelectedEmotion(e.target.value)}>{EMOTIONS.map((item) => <option key={item}>{item}</option>)}</select></label><label>Niche<select value={selectedNiche} onChange={(e) => setSelectedNiche(e.target.value)}>{NICHES.map((item) => <option key={item}>{item}</option>)}</select></label><input ref={fileInput} hidden type="file" accept="video/*" multiple onChange={(e) => { handleFiles(e.target.files); e.target.value = ""; }} /></div>
+            {uploadError && <p style={{ color: "#c43f50", fontSize: 12.5 }}>{uploadError}</p>}
+            <button className={styles.dropzone} onClick={() => fileInput.current?.click()} disabled={uploading}><span className={styles.dropzoneIcon}>↑</span><strong>{uploadStatus || "Drop videos here or click to upload"}</strong><small>MP4, MOV, WebM · 9:16 reaction clips recommended · watermarking runs in your browser and may take a few seconds per clip</small></button>
+            {!videos.length ? <div className={styles.emptyCreatorState}><strong>No videos yet</strong><span>Upload your first reaction clips to start building bundles.</span></div> : <div className={styles.videoGrid}>{videos.map((video) => <article key={video.id} className={styles.videoCard}>{video.previewUrl ? <video src={video.previewUrl} muted controls playsInline /> : <div className={styles.videoPlaceholder}>Video</div>}<div className={styles.videoCardBody}><div className={styles.videoCardTop}><div><h3>{video.name}</h3><span>{video.filename}</span></div><button className={styles.moreButton} onClick={() => removeVideo(video.id)} aria-label={`Remove ${video.name}`} disabled={bundles.some((bundle) => bundle.status === "published" && (libraryVideoIds[bundle.library_id] || []).includes(video.id))}>{bundles.some((bundle) => bundle.status === "published" && (libraryVideoIds[bundle.library_id] || []).includes(video.id)) ? "🔒" : "×"}</button></div><div className={styles.pillRow}><span className={styles.pill}>{video.emotion}</span><span className={`${styles.pill} ${styles.pillViolet}`}>{video.niche}</span>{video.processing_status === "pending" && <span className={styles.pill} style={{ background: "#fff3cd", color: "#8a6d00" }}>Watermark pending</span>}{video.processing_status === "failed" && <span className={styles.pill} style={{ background: "#fde2e2", color: "#c43f50" }}>Watermark failed</span>}</div></div></article>)}</div>}
+          </section>}
+
+          {tab === "bundles" && <section className={styles.studioSection}>
+            <div className={styles.sectionHeading}><div><h2>{editingBundleId ? "Edit Bundle" : "Create Bundle"}</h2><p>Select the videos you want, name the bundle, then publish it when it is finished. Published bundles are permanently locked.</p></div>{editingBundleId && <button className={styles.secondaryAction} onClick={startNewBundle}>Cancel edit</button>}</div>
+            <form className={styles.bundleBuilder} onSubmit={saveBundle}>
+              <div className={styles.formGrid}><label>Bundle name<input value={bundleName} onChange={(e) => setBundleName(e.target.value)} placeholder="e.g. Beach Vibes Pack" /></label><label>Description<input value={bundleDescription} onChange={(e) => setBundleDescription(e.target.value)} placeholder="What founders get in this bundle" /></label></div>
+              <div className={styles.builderHeader}><div><strong>Select videos</strong><span>{bundleVideoIds.length} selected · {formatPrice(previewBundlePrice.priceCents)} bundle value</span></div></div>
+              {!videos.length ? <div className={styles.emptyCreatorState}><strong>Upload videos first</strong><span>Your uploaded videos will appear here for bundle selection.</span></div> : <div className={styles.selectVideoGrid}>{videos.map((video) => { const selected = bundleVideoIds.includes(video.id); return <button type="button" key={video.id} className={selected ? styles.selectVideoActive : styles.selectVideo} onClick={() => toggleBundleVideo(video)}><span className={styles.selectVideoMedia}>{video.previewUrl ? <video src={video.previewUrl} muted playsInline /> : <span>Video</span>}</span><span><strong>{video.name}</strong><small>{video.emotion} · {video.niche}</small></span><i>{selected ? "✓" : "+"}</i></button>; })}</div>}
+              <div className={styles.formFooter}><span>Your price is {formatPrice(pricePerClipCents)} per clip · {bundleVideoIds.length ? formatPrice(previewBundlePrice.priceCents) : "$0.00"} total</span><button className={styles.primaryAction} type="submit" disabled={!bundleName.trim() || !bundleVideoIds.length}>{editingBundleId ? "Save Bundle" : "Create Bundle"}</button></div>
+            </form>
+
+            <div className={styles.sectionCard}><div className={styles.sectionHeading}><div><h2>Your Bundles</h2><p>Finish draft bundles, then publish to lock their video selection.</p></div></div>{!bundles.length ? <div className={styles.emptyCreatorState}><strong>No bundles yet</strong><span>Your finished bundles will appear here.</span></div> : <div className={styles.bundleGrid}>{bundles.map((bundle) => { const ids = libraryVideoIds[bundle.library_id] || []; return <article className={styles.bundleListCard} key={bundle.id}><div><strong>{bundle.name}</strong><span>{ids.length} videos · {bundle.status === "published" ? "Published and locked" : "Draft"}</span></div><b>{formatPrice(bundle.price_cents || ids.length * pricePerClipCents)}</b>{bundle.status === "published" ? <span className={styles.lockedLabel}>🔒 Locked</span> : <div className={styles.bundleListActions}><button onClick={() => startEditingBundle(bundle)}>Edit</button><button onClick={() => publishBundle(bundle)}>Publish</button></div>}</article>; })}</div>}</div>
+          </section>}
+        </main>
+      </div>
     </div>
   );
 }
