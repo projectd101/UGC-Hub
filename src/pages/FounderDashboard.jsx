@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import {
-  Bell, X, ChevronRight, Settings, Clapperboard, Check, ArrowRight, ArrowLeft, FolderCheck,
+  Bell, X, ChevronRight, Settings, Clapperboard, Check, ArrowRight, ArrowLeft, FolderCheck, Star,
 } from "lucide-react";
 import { supabase } from "../supabaseClient";
 import { useAuth } from "../lib/AuthContext";
@@ -27,11 +27,12 @@ function formatPrice(cents) {
   return `$${(cents / 100).toFixed(2)}`;
 }
 
-export default function FounderDashboard() {
+export default function FounderDashboard({ onOpenCreator }) {
   const { signOut, user, profile } = useAuth();
   const [view, setView] = useState("creators"); // "creators" | "bundles" | "purchases"
   const [creators, setCreators] = useState([]);
   const [introClips, setIntroClips] = useState({}); // { [creatorId]: signedUrl }
+  const [ratingStats, setRatingStats] = useState({}); // { [creatorId]: { avg_rating, review_count } }
   const [bundles, setBundles] = useState([]);
   const [purchasedBundles, setPurchasedBundles] = useState([]); // [{ ...bundle, videos: [...] }]
   const [loading, setLoading] = useState(true);
@@ -50,23 +51,27 @@ export default function FounderDashboard() {
       supabase.from("creators_public").select("*").order("created_at", { ascending: false }),
       supabase.from("bundles_public").select("*").order("created_at", { ascending: false }),
       supabase.from("founders").select("id").eq("user_id", user.id).maybeSingle(),
-    ]).then(async ([creatorsRes, bundlesRes, founderRes]) => {
+      supabase.from("creator_rating_stats").select("*"),
+    ]).then(async ([creatorsRes, bundlesRes, founderRes, statsRes]) => {
       setCreators(creatorsRes.data || []);
       setBundles(bundlesRes.data || []);
+      setRatingStats(Object.fromEntries((statsRes.data || []).map((r) => [r.creator_id, r])));
 
-      // Each creator's intro clip (sample_urls[0]) lives in the same private
-      // bucket as bundle preview clips, so it needs a signed URL too — the
-      // path itself never grants access to anything beyond that one clip.
-      const creatorsWithIntro = creatorsRes.data || [];
+      // Each creator's intro clip. We read it from creator_intro_clips, a view
+      // that exposes ONLY the watermarked preview path (never the clean
+      // original), and sign that path. Failures are logged instead of being
+      // silently swallowed so a broken intro is diagnosable, not just blank.
+      const { data: introRows } = await supabase
+        .from("creator_intro_clips")
+        .select("creator_id, watermarked_storage_path");
       const introEntries = await Promise.all(
-        creatorsWithIntro
-          .filter((c) => c.sample_urls?.[0])
-          .map(async (c) => {
-            const { data: signed } = await supabase.storage
-              .from("creator-videos")
-              .createSignedUrl(c.sample_urls[0], 3600);
-            return [c.id, signed?.signedUrl || null];
-          })
+        (introRows || []).map(async (row) => {
+          const { data: signed, error } = await supabase.storage
+            .from("creator-videos")
+            .createSignedUrl(row.watermarked_storage_path, 3600);
+          if (error) console.warn("Intro clip signing failed for", row.creator_id, error.message);
+          return [row.creator_id, signed?.signedUrl || null];
+        })
       );
       setIntroClips(Object.fromEntries(introEntries));
 
@@ -153,6 +158,16 @@ export default function FounderDashboard() {
   useEffect(() => {
     loadData();
   }, [user.id]);
+
+  // Deep link from a creator profile: /?bundle=<id> opens that bundle's detail
+  // view directly, then cleans the param so refresh/back behave normally.
+  useEffect(() => {
+    const wanted = new URLSearchParams(window.location.search).get("bundle");
+    if (!wanted) return;
+    setView("bundles");
+    setOpenBundleId(wanted);
+    window.history.replaceState({}, "", window.location.pathname);
+  }, []);
 
   async function handleBuyBundle(bundleId) {
     setBuyingBundleId(bundleId);
@@ -335,7 +350,8 @@ export default function FounderDashboard() {
         {!loading && view === "creators" && creators.length > 0 && (
           <div className={styles.grid}>
             {creators.map((c) => (
-              <div key={c.id} className={styles.creatorCard}>
+              <div key={c.id} className={`${styles.creatorCard} ${styles.bundleCardClickable}`} onClick={() => onOpenCreator?.(c.id)} role="button" tabIndex={0}
+                onKeyDown={(e) => { if (e.key === "Enter") onOpenCreator?.(c.id); }}>
                 <div className={styles.introWrap}>
                   {introClips[c.id] ? (
                     <video className={styles.introVideo} src={introClips[c.id]} autoPlay loop muted playsInline preload="metadata" />
@@ -349,7 +365,11 @@ export default function FounderDashboard() {
                   </div>
                   <div>
                     <h3>{c.display_name}</h3>
-                    <span className={styles.cardSub}>Reaction creator</span>
+                    <span className={styles.cardSub}>
+                      {ratingStats[c.id]
+                        ? <><Star size={11} strokeWidth={2} fill="currentColor" style={{ verticalAlign: "-1px", color: "#e0a100" }} /> {Number(ratingStats[c.id].avg_rating).toFixed(1)} ({ratingStats[c.id].review_count})</>
+                        : "Reaction creator · New"}
+                    </span>
                   </div>
                 </div>
                 {c.bio && <p className={styles.bio}>{c.bio}</p>}
@@ -367,7 +387,7 @@ export default function FounderDashboard() {
                 )}
                 <div className={styles.libraryMeta}>
                   <span>Reaction library</span>
-                  <span className={styles.freeTag}>Available</span>
+                  <span className={styles.viewLink}>View profile <ArrowRight size={12} strokeWidth={2.25} style={{verticalAlign:"-1px"}} /></span>
                 </div>
               </div>
             ))}

@@ -8,11 +8,31 @@ import CreatorOnboarding from "./pages/CreatorOnboarding";
 import FounderDashboard from "./pages/FounderDashboard";
 import CreatorDashboard from "./pages/CreatorDashboard";
 import PaymentPending from "./pages/PaymentPending";
+import CreatorProfile from "./pages/CreatorProfile";
+import ProfileShell from "./pages/ProfileShell";
+
+// The app has no router library; it switches on window.location.pathname.
+// navigate() updates the URL with pushState (so refresh, deep links, and the
+// browser back/forward buttons all work) and notifies listeners to re-render.
+export function navigate(to) {
+  window.history.pushState({}, "", to);
+  window.dispatchEvent(new PopStateEvent("popstate"));
+}
+
+function usePathname() {
+  const [path, setPath] = useState(window.location.pathname);
+  useEffect(() => {
+    const onChange = () => setPath(window.location.pathname);
+    window.addEventListener("popstate", onChange);
+    return () => window.removeEventListener("popstate", onChange);
+  }, []);
+  return path;
+}
 
 function Router() {
   const { session, profile, loadingProfile, refreshProfile } = useAuth();
 
-  const path = window.location.pathname;
+  const path = usePathname();
   const params = new URLSearchParams(window.location.search);
   const wantsSignIn = path === "/sign-in" || params.get("signin");
 
@@ -73,7 +93,20 @@ function Router() {
     );
   }
 
-  return profile.role === "founder" ? <FounderDashboard /> : <CreatorDashboard />;
+  if (profile.role === "founder") {
+    const match = path.match(/^\/creator\/([0-9a-fA-F-]{36})\/?$/);
+    if (match) {
+      return (
+        <CreatorProfileRoute
+          creatorId={match[1]}
+          onBack={() => navigate("/")}
+        />
+      );
+    }
+    return <FounderDashboard onOpenCreator={(id) => navigate(`/creator/${id}`)} />;
+  }
+
+  return <CreatorDashboard />;
 }
 
 // Looks up this user's creator_id (not always present on `profile` directly)
@@ -130,6 +163,17 @@ function PurchaseConfirmationGate({ userId, bundleId, onDone }) {
   if (!founderId || !bundleId) return <CenteredMessage text="Something went wrong loading your purchase." />;
 
   return <PaymentPending kind="bundle" founderId={founderId} bundleId={bundleId} onConfirmed={onDone} onTimeout={onDone} />;
+}
+
+// Shell for the profile page: same header/brand as the dashboards so it feels
+// like part of the app rather than a separate site.
+function CreatorProfileRoute({ creatorId, onBack }) {
+  const { signOut } = useAuth();
+  return (
+    <ProfileShell onSignOut={signOut}>
+      <CreatorProfile creatorId={creatorId} onBack={onBack} onOpenBundle={(bundleId) => navigate(`/?bundle=${bundleId}`)} />
+    </ProfileShell>
+  );
 }
 
 function CenteredMessage({ text }) {
