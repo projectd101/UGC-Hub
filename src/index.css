@@ -1,29 +1,28 @@
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap");
 
 :root {
-  --bg: #ffffff;
-  --surface: #ffffff;
-  --surface-2: #f7f7f8;
+  --bg: #090c14;
+  --surface: #0e121b;
+  --surface-2: #151923;
 
-  --ink: #111111;
-  --ink-dim: #6f7075;
+  --ink: #f7f7fa;
+  --ink-dim: #a5a9b8;
 
-  --coral: #ff4d67;
-  --violet: #7568ff;
+  --coral: #ff5f76;
+  --violet: #7857ff;
 
-  --line: #e6e6e8;
+  --line: rgba(255,255,255,.12);
 
-  /* Creator/founder studio — white shell, one accent */
-  --studio-bg: #ffffff;
-  --studio-surface: #f7f8fa;
-  --studio-surface-2: #eef0f3;
-  --studio-line: #e3e5e9;
-  --studio-ink: #14151a;
-  --studio-ink-dim: #6b6f78;
-  --signal: #2f6fed;
-  --signal-dim: rgba(47,111,237,.10);
-  --cash: #1f9d5c;
-  --cash-dim: rgba(31,157,92,.10);
+  --studio-bg: #0b0e16;
+  --studio-surface: #10141e;
+  --studio-surface-2: #171b26;
+  --studio-line: rgba(255,255,255,.11);
+  --studio-ink: #f5f6fa;
+  --studio-ink-dim: #9ca1b0;
+  --signal: #7857ff;
+  --signal-dim: rgba(120,87,255,.12);
+  --cash: #43c77b;
+  --cash-dim: rgba(67,199,123,.12);
 
   --font-display: "Inter", system-ui, sans-serif;
   --font-body: "Inter", system-ui, sans-serif;
@@ -38,6 +37,7 @@ html,
 body {
   margin: 0;
   padding: 0;
+  min-height: 100%;
   background: var(--bg);
   color: var(--ink);
 }
@@ -47,12 +47,12 @@ body {
   font-size: 16px;
   line-height: 1.55;
   -webkit-font-smoothing: antialiased;
-  background: #ffffff;
+  background: #090c14;
 }
 
 #root {
   min-height: 100vh;
-  background: #ffffff;
+  background: #090c14;
 }
 
 h1,
@@ -90,12 +90,12 @@ video {
 }
 
 ::selection {
-  background: var(--coral);
+  background: #7857ff;
   color: #ffffff;
 }
 
 :focus-visible {
-  outline: 2px solid var(--violet);
+  outline: 2px solid #9a83ff;
   outline-offset: 3px;
 }
 
