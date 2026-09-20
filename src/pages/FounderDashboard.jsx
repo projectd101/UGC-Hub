@@ -31,6 +31,7 @@ export default function FounderDashboard() {
   const { signOut, user, profile } = useAuth();
   const [view, setView] = useState("creators"); // "creators" | "bundles" | "purchases"
   const [creators, setCreators] = useState([]);
+  const [introClips, setIntroClips] = useState({}); // { [creatorId]: signedUrl }
   const [bundles, setBundles] = useState([]);
   const [purchasedBundles, setPurchasedBundles] = useState([]); // [{ ...bundle, videos: [...] }]
   const [loading, setLoading] = useState(true);
@@ -52,6 +53,22 @@ export default function FounderDashboard() {
     ]).then(async ([creatorsRes, bundlesRes, founderRes]) => {
       setCreators(creatorsRes.data || []);
       setBundles(bundlesRes.data || []);
+
+      // Each creator's intro clip (sample_urls[0]) lives in the same private
+      // bucket as bundle preview clips, so it needs a signed URL too — the
+      // path itself never grants access to anything beyond that one clip.
+      const creatorsWithIntro = creatorsRes.data || [];
+      const introEntries = await Promise.all(
+        creatorsWithIntro
+          .filter((c) => c.sample_urls?.[0])
+          .map(async (c) => {
+            const { data: signed } = await supabase.storage
+              .from("creator-videos")
+              .createSignedUrl(c.sample_urls[0], 3600);
+            return [c.id, signed?.signedUrl || null];
+          })
+      );
+      setIntroClips(Object.fromEntries(introEntries));
 
       // Watermarked previews of every clip in every published bundle. These
       // come from a view that exposes ONLY the watermarked file path, never
@@ -315,6 +332,13 @@ export default function FounderDashboard() {
           <div className={styles.grid}>
             {creators.map((c) => (
               <div key={c.id} className={styles.creatorCard}>
+                <div className={styles.introWrap}>
+                  {introClips[c.id] ? (
+                    <video className={styles.introVideo} src={introClips[c.id]} autoPlay loop muted playsInline preload="metadata" />
+                  ) : (
+                    <div className={styles.introEmpty}><Clapperboard size={20} strokeWidth={1.6} /></div>
+                  )}
+                </div>
                 <div className={styles.cardHead}>
                   <div className={styles.avatar}>
                     {c.avatar_url ? <img src={c.avatar_url} alt="" /> : (c.display_name || "?").charAt(0).toUpperCase()}
@@ -477,7 +501,7 @@ export default function FounderDashboard() {
                     return <p style={{ fontSize: 12.5, color: "var(--studio-ink-dim)", marginTop: 10 }}>Preparing your files for download…</p>;
                   }
                   if (folder?.status === "failed") {
-                    return <p style={{ fontSize: 12.5, color: "#ff6b5c", marginTop: 10 }}>We hit a snag preparing your download — please contact support and we'll sort it out.</p>;
+                    return <p style={{ fontSize: 12.5, color: "#e0473a", marginTop: 10 }}>We hit a snag preparing your download — please contact support and we'll sort it out.</p>;
                   }
                   return null;
                 })()}

@@ -13,17 +13,17 @@
 
   --line: #e6e6e8;
 
-  /* Creator/founder studio — dark shell, one accent */
-  --studio-bg: #0a0a0b;
-  --studio-surface: #141416;
-  --studio-surface-2: #1a1a1d;
-  --studio-line: #26262a;
-  --studio-ink: #ededec;
-  --studio-ink-dim: #8a8a8e;
-  --signal: #ff5c33;
-  --signal-dim: rgba(255,92,51,.12);
-  --cash: #3ddc84;
-  --cash-dim: rgba(61,220,132,.12);
+  /* Creator/founder studio — white shell, one accent */
+  --studio-bg: #ffffff;
+  --studio-surface: #f7f8fa;
+  --studio-surface-2: #eef0f3;
+  --studio-line: #e3e5e9;
+  --studio-ink: #14151a;
+  --studio-ink-dim: #6b6f78;
+  --signal: #2f6fed;
+  --signal-dim: rgba(47,111,237,.10);
+  --cash: #1f9d5c;
+  --cash-dim: rgba(31,157,92,.10);
 
   --font-display: "Inter", system-ui, sans-serif;
   --font-body: "Inter", system-ui, sans-serif;
