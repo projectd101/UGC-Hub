@@ -68,6 +68,7 @@ export default function CreatorDashboard() {
   const [savingPayout, setSavingPayout] = useState(false);
   const [payoutSaved, setPayoutSaved] = useState(false);
   const [payouts, setPayouts] = useState([]);
+  const [payoutModalOpen, setPayoutModalOpen] = useState(false);
   const [deletingAccount, setDeletingAccount] = useState(false);
 
   // Load creator row + all their content on mount.
@@ -174,7 +175,7 @@ export default function CreatorDashboard() {
     publishedBundles: bundles.filter((bundle) => bundle.status === "published").length,
   }), [videos, bundles]);
 
-  function closePanels() { setDrawerOpen(false); setNotificationsOpen(false); setWalletOpen(false); setActivePanel(null); }
+  function closePanels() { setDrawerOpen(false); setNotificationsOpen(false); setWalletOpen(false); setPayoutModalOpen(false); setActivePanel(null); }
   function openMenu(panel = null) { setNotificationsOpen(false); setWalletOpen(false); setDrawerOpen(true); setActivePanel(panel); }
 
   async function handleSavePayout(e) {
@@ -554,7 +555,7 @@ export default function CreatorDashboard() {
           </div>
         </header>
 
-        {walletOpen && <aside className={styles.notificationPanel} aria-label="Wallet"><div className={styles.panelHeader}><div><span className={styles.panelEyebrow}>Creator earnings</span><h2>Wallet</h2></div><button className={styles.closeButton} onClick={closePanels}><X size={18} strokeWidth={2} /></button></div><div className={styles.walletBalance}><span>Available balance</span><strong className={styles.cashValue}>{formatPrice(creator?.wallet_balance_cents || 0)}</strong><small>{creator?.payout_method_set_at ? "Payouts are sent manually by our team via international bank transfer." : "Add your bank details so we know where to send your earnings."}</small></div>{payouts.length > 0 && <div className={styles.payoutHistory}>{payouts.slice(0, 5).map((p) => <div key={p.id} className={styles.payoutRow}><span>{new Date(p.created_at).toLocaleDateString()}</span><span className={p.status === "completed" ? styles.payoutDone : p.status === "failed" ? styles.payoutFailed : styles.payoutPending}>{p.status}</span><b>{formatPrice(p.amount_cents)}</b></div>)}</div>}<button className={styles.walletAction} onClick={() => { setWalletOpen(false); openMenu("payouts"); }}>{creator?.payout_method_set_at ? "Update payout details" : "Set up payouts"}</button></aside>}
+        {walletOpen && <aside className={styles.notificationPanel} aria-label="Wallet"><div className={styles.panelHeader}><div><span className={styles.panelEyebrow}>Creator earnings</span><h2>Wallet</h2></div><button className={styles.closeButton} onClick={closePanels}><X size={18} strokeWidth={2} /></button></div><div className={styles.walletBalance}><span>Available balance</span><strong className={styles.cashValue}>{formatPrice(creator?.wallet_balance_cents || 0)}</strong><small>{creator?.payout_method_set_at ? "Payouts are sent manually by our team via international bank transfer." : "Add your bank details so we know where to send your earnings."}</small></div>{payouts.length > 0 && <div className={styles.payoutHistory}>{payouts.slice(0, 5).map((p) => <div key={p.id} className={styles.payoutRow}><span>{new Date(p.created_at).toLocaleDateString()}</span><span className={p.status === "completed" ? styles.payoutDone : p.status === "failed" ? styles.payoutFailed : styles.payoutPending}>{p.status}</span><b>{formatPrice(p.amount_cents)}</b></div>)}</div>}<button className={styles.walletAction} onClick={() => { setWalletOpen(false); setPayoutModalOpen(true); }}>{creator?.payout_method_set_at ? "Update payout details" : "Set up payouts"}</button></aside>}
         {notificationsOpen && <aside className={styles.notificationPanel} aria-label="Notifications"><div className={styles.panelHeader}><div><span className={styles.panelEyebrow}>Updates</span><h2>Notifications</h2></div><button className={styles.closeButton} onClick={closePanels}><X size={18} strokeWidth={2} /></button></div><div className={styles.emptyState}><Bell size={26} strokeWidth={1.6} /><strong>You're all caught up</strong><span>There are no new notifications.</span></div></aside>}
 
         <aside className={`${styles.drawer} ${drawerOpen ? styles.drawerOpen : ""}`} aria-hidden={!drawerOpen}>
@@ -562,16 +563,26 @@ export default function CreatorDashboard() {
           <div className={styles.accountCard}><div className={styles.accountAvatar}>{(creator?.display_name || user?.email || "C").charAt(0).toUpperCase()}</div><div><strong>{creator?.display_name || "Creator"}</strong><span>{user?.email || "Creator account"}</span></div></div>
           <nav className={styles.drawerNav}>
             <button className={styles.drawerItem} onClick={() => setActivePanel("profile")}><span>Account information</span><ChevronRight size={16} strokeWidth={2.25} /></button>
-            <button className={styles.drawerItem} onClick={() => setActivePanel("payouts")}><span>Payouts</span><ChevronRight size={16} strokeWidth={2.25} /></button>
+            <button className={styles.drawerItem} onClick={() => { setDrawerOpen(false); setPayoutModalOpen(true); }}><span>Payouts</span><ChevronRight size={16} strokeWidth={2.25} /></button>
           </nav>
-          {activePanel && (
+          {activePanel === "profile" && (
             <div className={styles.drawerDetail}>
-              {activePanel === "profile" && (<><span className={styles.panelEyebrow}>Account</span><h3>Account information</h3><p>Your creator account details and public profile settings will live here.</p></>)}
-              {activePanel === "payouts" && (
+              <span className={styles.panelEyebrow}>Account</span><h3>Account information</h3><p>Your creator account details and public profile settings will live here.</p>
+            </div>
+          )}
+          <div className={styles.drawerFooter}><button className={`${styles.drawerItem} ${styles.deleteItem}`} onClick={handleDeleteAccount} disabled={deletingAccount}><span>{deletingAccount ? "Starting deletion…" : "Delete account"}</span><ChevronRight size={16} strokeWidth={2.25} /></button></div>
+        </aside>
+
+        {payoutModalOpen && (
+          <div className={styles.modalBackdrop} onClick={() => setPayoutModalOpen(false)}>
+            <div className={styles.modal} onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Payouts">
+              <div className={styles.modalHeader}>
+                <div><span className={styles.panelEyebrow}>Payments</span><h2>Payouts</h2></div>
+                <button className={styles.closeButton} onClick={() => setPayoutModalOpen(false)}><X size={18} strokeWidth={2} /></button>
+              </div>
+              <div className={styles.modalScroll}>
                 <form onSubmit={handleSavePayout}>
-                  <span className={styles.panelEyebrow}>Payments</span>
-                  <h3>Payouts</h3>
-                  <p style={{ display: "flex", alignItems: "flex-start", gap: 7 }}><Landmark size={14} strokeWidth={2} style={{ flex: "0 0 auto", marginTop: 2 }} />Payouts are sent manually by our team via international bank transfer (SWIFT). No automatic payment provider is connected — add your details below and we'll wire your balance when you request a payout.</p>
+                  <p className={styles.payoutIntro}><Landmark size={14} strokeWidth={2} className={styles.payoutIntroIcon} />Payouts are sent manually by our team via international bank transfer (SWIFT). No automatic payment provider is connected — add your details below and we'll wire your balance when you request a payout.</p>
                   <div className={styles.payoutFields}>
                     <label>Account holder name<input required value={payoutForm.account_holder_name} onChange={(e) => setPayoutForm((f) => ({ ...f, account_holder_name: e.target.value }))} /></label>
                     <label>Bank name<input required value={payoutForm.bank_name} onChange={(e) => setPayoutForm((f) => ({ ...f, bank_name: e.target.value }))} /></label>
@@ -584,11 +595,10 @@ export default function CreatorDashboard() {
                   <button className={styles.walletAction} type="submit" disabled={savingPayout}>{savingPayout ? "Saving…" : "Save payout details"}</button>
                   {payoutSaved && <p className={styles.payoutSavedNote}>Saved. We'll use these details for your next manual payout.</p>}
                 </form>
-              )}
+              </div>
             </div>
-          )}
-          <div className={styles.drawerFooter}><button className={`${styles.drawerItem} ${styles.deleteItem}`} onClick={handleDeleteAccount} disabled={deletingAccount}><span>{deletingAccount ? "Starting deletion…" : "Delete account"}</span><ChevronRight size={16} strokeWidth={2.25} /></button></div>
-        </aside>
+          </div>
+        )}
 
         <main className={styles.main}>
           <div className={styles.pageIntro}>
