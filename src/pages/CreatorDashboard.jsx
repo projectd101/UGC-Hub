@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   LayoutGrid, Clapperboard, Package, Settings, Bell, Wallet,
   Upload, Plus, Lock, FolderCheck, FolderClock, TriangleAlert,
-  X, ChevronRight, Pencil, ExternalLink,
+  X, ChevronRight, Pencil, ExternalLink, Star, Landmark, ShieldAlert,
 } from "lucide-react";
 import { supabase } from "../supabaseClient";
 import { useAuth } from "../lib/AuthContext";
@@ -59,6 +59,17 @@ export default function CreatorDashboard() {
   const [editingBundleId, setEditingBundleId] = useState(null);
   const fileInput = useRef(null);
 
+  // Payouts (manual, international bank transfer only) — form state seeded
+  // from creator.payout_bank_details once the creator row loads.
+  const [payoutForm, setPayoutForm] = useState({
+    account_holder_name: "", bank_name: "", account_number: "",
+    swift_bic: "", iban: "", bank_country: "", bank_address: "",
+  });
+  const [savingPayout, setSavingPayout] = useState(false);
+  const [payoutSaved, setPayoutSaved] = useState(false);
+  const [payouts, setPayouts] = useState([]);
+  const [deletingAccount, setDeletingAccount] = useState(false);
+
   // Load creator row + all their content on mount.
   useEffect(() => {
     let cancelled = false;
@@ -77,11 +88,16 @@ export default function CreatorDashboard() {
         return;
       }
 
-      const [videosRes, librariesRes, bundlesRes, settingsRes] = await Promise.all([
+      if (creatorRow.payout_bank_details) {
+        setPayoutForm((prev) => ({ ...prev, ...creatorRow.payout_bank_details }));
+      }
+
+      const [videosRes, librariesRes, bundlesRes, settingsRes, payoutsRes] = await Promise.all([
         supabase.from("videos").select("*").eq("creator_id", creatorRow.id).order("created_at", { ascending: false }),
         supabase.from("libraries").select("*").eq("creator_id", creatorRow.id).order("created_at", { ascending: false }),
         supabase.from("bundles").select("*").eq("creator_id", creatorRow.id).order("created_at", { ascending: false }),
         supabase.from("platform_settings").select("price_per_clip_cents").eq("id", true).maybeSingle(),
+        supabase.from("payouts").select("*").eq("creator_id", creatorRow.id).order("created_at", { ascending: false }),
       ]);
 
       if (cancelled) return;
@@ -90,6 +106,7 @@ export default function CreatorDashboard() {
       setVideos(await attachPreviewUrls(loadedVideos));
       setLibraries(librariesRes.data || []);
       setBundles(bundlesRes.data || []);
+      setPayouts(payoutsRes.data || []);
       if (settingsRes.data) setPricePerClipCents(settingsRes.data.price_per_clip_cents);
 
       // Drive folder status for already-published bundles (RLS: creators can
@@ -159,8 +176,46 @@ export default function CreatorDashboard() {
 
   function closePanels() { setDrawerOpen(false); setNotificationsOpen(false); setWalletOpen(false); setActivePanel(null); }
   function openMenu(panel = null) { setNotificationsOpen(false); setWalletOpen(false); setDrawerOpen(true); setActivePanel(panel); }
-  function handleDeleteAccount() {
-    if (window.confirm("Delete your UGC Hub account? This action cannot be undone.")) window.alert("Account deletion is not connected yet. No account was deleted.");
+
+  async function handleSavePayout(e) {
+    e.preventDefault();
+    if (!creator) return;
+    setSavingPayout(true);
+    setPayoutSaved(false);
+    const { data, error } = await supabase
+      .from("creators")
+      .update({ payout_bank_details: payoutForm, payout_method_set_at: new Date().toISOString() })
+      .eq("id", creator.id)
+      .select()
+      .single();
+    setSavingPayout(false);
+    if (!error && data) {
+      setCreator(data);
+      setPayoutSaved(true);
+    }
+  }
+
+  async function setIntroClip(video) {
+    if (!creator) return;
+    const { data, error } = await supabase
+      .from("creators")
+      .update({ sample_urls: [video.storage_path] })
+      .eq("id", creator.id)
+      .select()
+      .single();
+    if (!error && data) setCreator(data);
+  }
+
+  async function handleDeleteAccount() {
+    if (!window.confirm("Delete your UGC Hub account? Your profile will be archived immediately and permanently removed in 30 days. You can contact support to cancel during that window. This cannot be undone after the 30 days pass.")) return;
+    setDeletingAccount(true);
+    const { error } = await supabase.rpc("request_own_account_deletion");
+    setDeletingAccount(false);
+    if (error) {
+      window.alert("Couldn't start account deletion. Please try again.");
+      return;
+    }
+    await signOut();
   }
   function goTo(nextTab) { closePanels(); setTab(nextTab); window.scrollTo({ top: 0, behavior: "smooth" }); }
 
@@ -499,7 +554,7 @@ export default function CreatorDashboard() {
           </div>
         </header>
 
-        {walletOpen && <aside className={styles.notificationPanel} aria-label="Wallet"><div className={styles.panelHeader}><div><span className={styles.panelEyebrow}>Creator earnings</span><h2>Wallet</h2></div><button className={styles.closeButton} onClick={closePanels}><X size={18} strokeWidth={2} /></button></div><div className={styles.walletBalance}><span>Available balance</span><strong>$0.00</strong><small>Earnings and payout status will appear here once your bundles generate revenue.</small></div><button className={styles.walletAction} onClick={() => { setWalletOpen(false); openMenu("payouts"); }}>Set up payouts</button></aside>}
+        {walletOpen && <aside className={styles.notificationPanel} aria-label="Wallet"><div className={styles.panelHeader}><div><span className={styles.panelEyebrow}>Creator earnings</span><h2>Wallet</h2></div><button className={styles.closeButton} onClick={closePanels}><X size={18} strokeWidth={2} /></button></div><div className={styles.walletBalance}><span>Available balance</span><strong className={styles.cashValue}>{formatPrice(creator?.wallet_balance_cents || 0)}</strong><small>{creator?.payout_method_set_at ? "Payouts are sent manually by our team via international bank transfer." : "Add your bank details so we know where to send your earnings."}</small></div>{payouts.length > 0 && <div className={styles.payoutHistory}>{payouts.slice(0, 5).map((p) => <div key={p.id} className={styles.payoutRow}><span>{new Date(p.created_at).toLocaleDateString()}</span><span className={p.status === "completed" ? styles.payoutDone : p.status === "failed" ? styles.payoutFailed : styles.payoutPending}>{p.status}</span><b>{formatPrice(p.amount_cents)}</b></div>)}</div>}<button className={styles.walletAction} onClick={() => { setWalletOpen(false); openMenu("payouts"); }}>{creator?.payout_method_set_at ? "Update payout details" : "Set up payouts"}</button></aside>}
         {notificationsOpen && <aside className={styles.notificationPanel} aria-label="Notifications"><div className={styles.panelHeader}><div><span className={styles.panelEyebrow}>Updates</span><h2>Notifications</h2></div><button className={styles.closeButton} onClick={closePanels}><X size={18} strokeWidth={2} /></button></div><div className={styles.emptyState}><Bell size={26} strokeWidth={1.6} /><strong>You're all caught up</strong><span>There are no new notifications.</span></div></aside>}
 
         <aside className={`${styles.drawer} ${drawerOpen ? styles.drawerOpen : ""}`} aria-hidden={!drawerOpen}>
@@ -509,8 +564,30 @@ export default function CreatorDashboard() {
             <button className={styles.drawerItem} onClick={() => setActivePanel("profile")}><span>Account information</span><ChevronRight size={16} strokeWidth={2.25} /></button>
             <button className={styles.drawerItem} onClick={() => setActivePanel("payouts")}><span>Payouts</span><ChevronRight size={16} strokeWidth={2.25} /></button>
           </nav>
-          {activePanel && <div className={styles.drawerDetail}><span className={styles.panelEyebrow}>{activePanel === "profile" ? "Account" : "Payments"}</span><h3>{activePanel === "profile" ? "Account information" : "Payouts"}</h3><p>{activePanel === "profile" ? "Your creator account details and public profile settings will live here." : "Set up how UGC Hub should send your earnings. Your payout method will be stored securely when payments are connected."}</p>{activePanel === "payouts" && <button className={styles.walletAction}>Set up payout method</button>}</div>}
-          <div className={styles.drawerFooter}><button className={`${styles.drawerItem} ${styles.deleteItem}`} onClick={handleDeleteAccount}><span>Delete account</span><ChevronRight size={16} strokeWidth={2.25} /></button></div>
+          {activePanel && (
+            <div className={styles.drawerDetail}>
+              {activePanel === "profile" && (<><span className={styles.panelEyebrow}>Account</span><h3>Account information</h3><p>Your creator account details and public profile settings will live here.</p></>)}
+              {activePanel === "payouts" && (
+                <form onSubmit={handleSavePayout}>
+                  <span className={styles.panelEyebrow}>Payments</span>
+                  <h3>Payouts</h3>
+                  <p style={{ display: "flex", alignItems: "flex-start", gap: 7 }}><Landmark size={14} strokeWidth={2} style={{ flex: "0 0 auto", marginTop: 2 }} />Payouts are sent manually by our team via international bank transfer (SWIFT). No automatic payment provider is connected — add your details below and we'll wire your balance when you request a payout.</p>
+                  <div className={styles.payoutFields}>
+                    <label>Account holder name<input required value={payoutForm.account_holder_name} onChange={(e) => setPayoutForm((f) => ({ ...f, account_holder_name: e.target.value }))} /></label>
+                    <label>Bank name<input required value={payoutForm.bank_name} onChange={(e) => setPayoutForm((f) => ({ ...f, bank_name: e.target.value }))} /></label>
+                    <label>Account number / IBAN<input required value={payoutForm.iban} onChange={(e) => setPayoutForm((f) => ({ ...f, iban: e.target.value }))} placeholder="IBAN, if your bank uses one" /></label>
+                    <label>Account number (non-IBAN)<input value={payoutForm.account_number} onChange={(e) => setPayoutForm((f) => ({ ...f, account_number: e.target.value }))} placeholder="Leave blank if you filled in IBAN" /></label>
+                    <label>SWIFT / BIC code<input required value={payoutForm.swift_bic} onChange={(e) => setPayoutForm((f) => ({ ...f, swift_bic: e.target.value }))} /></label>
+                    <label>Bank country<input required value={payoutForm.bank_country} onChange={(e) => setPayoutForm((f) => ({ ...f, bank_country: e.target.value }))} /></label>
+                    <label>Bank address<input value={payoutForm.bank_address} onChange={(e) => setPayoutForm((f) => ({ ...f, bank_address: e.target.value }))} placeholder="Optional, speeds up transfers" /></label>
+                  </div>
+                  <button className={styles.walletAction} type="submit" disabled={savingPayout}>{savingPayout ? "Saving…" : "Save payout details"}</button>
+                  {payoutSaved && <p className={styles.payoutSavedNote}>Saved. We'll use these details for your next manual payout.</p>}
+                </form>
+              )}
+            </div>
+          )}
+          <div className={styles.drawerFooter}><button className={`${styles.drawerItem} ${styles.deleteItem}`} onClick={handleDeleteAccount} disabled={deletingAccount}><span>{deletingAccount ? "Starting deletion…" : "Delete account"}</span><ChevronRight size={16} strokeWidth={2.25} /></button></div>
         </aside>
 
         <main className={styles.main}>
@@ -524,7 +601,7 @@ export default function CreatorDashboard() {
               <div className={styles.tickerDivider} />
               <div className={styles.tickerItem}><span>Bundles</span><strong>{stats.bundles}</strong><small>{stats.publishedBundles} published</small></div>
               <div className={styles.tickerDivider} />
-              <div className={styles.tickerItem}><span>Earnings</span><strong className={styles.cashValue}>$0.00</strong><small>available</small></div>
+              <div className={styles.tickerItem}><span>Earnings</span><strong className={styles.cashValue}>{formatPrice(creator?.wallet_balance_cents || 0)}</strong><small>available</small></div>
               <div className={styles.tickerSpacer} />
               <div className={styles.tickerPrice}>
                 <span>Your price per clip <button type="button" onClick={() => window.alert("Your platform clip price is currently configured by UGC Hub.")} aria-label="Learn more"><ExternalLink size={11} strokeWidth={2.25} /></button></span>
@@ -561,7 +638,7 @@ export default function CreatorDashboard() {
             <div className={styles.uploadControls}><label>Emotion<select value={selectedEmotion} onChange={(e) => setSelectedEmotion(e.target.value)}>{EMOTIONS.map((item) => <option key={item}>{item}</option>)}</select></label><label>Niche<select value={selectedNiche} onChange={(e) => setSelectedNiche(e.target.value)}>{NICHES.map((item) => <option key={item}>{item}</option>)}</select></label><input ref={fileInput} hidden type="file" accept="video/*" multiple onChange={(e) => { handleFiles(e.target.files); e.target.value = ""; }} /></div>
             {uploadError && <p style={{ color: "#e0473a", fontSize: 12.5 }}>{uploadError}</p>}
             <button className={styles.dropzone} onClick={() => fileInput.current?.click()} disabled={uploading}><span className={styles.dropzoneIcon}><Upload size={22} strokeWidth={2} /></span><strong>{uploadStatus || "Drop videos here or click to upload"}</strong><small>MP4, MOV, WebM · 9:16 reaction clips recommended · watermarking runs in your browser and may take a few seconds per clip</small></button>
-            {!videos.length ? <div className={styles.emptyCreatorState}><strong>No videos yet</strong><span>Upload your first reaction clips to start building bundles.</span></div> : <div className={styles.videoGrid}>{videos.map((video) => <article key={video.id} className={styles.videoCard}>{video.previewUrl ? <video src={video.previewUrl} muted controls playsInline /> : <div className={styles.videoPlaceholder}>Video</div>}<div className={styles.videoCardBody}><div className={styles.videoCardTop}><div><h3>{video.name}</h3><span>{video.filename}</span></div><button className={styles.moreButton} onClick={() => removeVideo(video.id)} aria-label={`Remove ${video.name}`} disabled={bundles.some((bundle) => bundle.status === "published" && (libraryVideoIds[bundle.library_id] || []).includes(video.id))}>{bundles.some((bundle) => bundle.status === "published" && (libraryVideoIds[bundle.library_id] || []).includes(video.id)) ? <Lock size={13} strokeWidth={2.25} /> : <X size={15} strokeWidth={2.25} />}</button></div><div className={styles.pillRow}><span className={styles.pill}>{video.emotion}</span><span className={`${styles.pill} ${styles.pillViolet}`}>{video.niche}</span>{video.processing_status === "pending" && <span className={styles.pill} style={{ background: "rgba(180,131,0,.10)", color: "#8a6300" }}>Watermark pending</span>}{video.processing_status === "failed" && <span className={styles.pill} style={{ background: "rgba(224,71,58,.10)", color: "#c23a2e" }}>Watermark failed</span>}</div></div></article>)}</div>}
+            {!videos.length ? <div className={styles.emptyCreatorState}><strong>No videos yet</strong><span>Upload your first reaction clips to start building bundles.</span></div> : <div className={styles.videoGrid}>{videos.map((video) => { const isIntro = creator?.sample_urls?.[0] === video.storage_path; return <article key={video.id} className={styles.videoCard}>{video.previewUrl ? <video src={video.previewUrl} muted controls playsInline /> : <div className={styles.videoPlaceholder}>Video</div>}<div className={styles.videoCardBody}><div className={styles.videoCardTop}><div><h3>{video.name}</h3><span>{video.filename}</span></div><button className={styles.moreButton} onClick={() => removeVideo(video.id)} aria-label={`Remove ${video.name}`} disabled={bundles.some((bundle) => bundle.status === "published" && (libraryVideoIds[bundle.library_id] || []).includes(video.id))}>{bundles.some((bundle) => bundle.status === "published" && (libraryVideoIds[bundle.library_id] || []).includes(video.id)) ? <Lock size={13} strokeWidth={2.25} /> : <X size={15} strokeWidth={2.25} />}</button></div><div className={styles.pillRow}><span className={styles.pill}>{video.emotion}</span><span className={`${styles.pill} ${styles.pillViolet}`}>{video.niche}</span>{video.processing_status === "pending" && <span className={styles.pill} style={{ background: "rgba(180,131,0,.10)", color: "#8a6300" }}>Watermark pending</span>}{video.processing_status === "failed" && <span className={styles.pill} style={{ background: "rgba(224,71,58,.10)", color: "#c23a2e" }}>Watermark failed</span>}</div><button className={isIntro ? styles.introButtonActive : styles.introButton} onClick={() => setIntroClip(video)} disabled={isIntro}><Star size={11} strokeWidth={2.25} fill={isIntro ? "currentColor" : "none"} />{isIntro ? "Intro clip on your profile" : "Set as intro clip"}</button></div></article>; })}</div>}
           </section>}
 
           {tab === "bundles" && <section className={styles.studioSection}>

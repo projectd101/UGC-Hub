@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import {
-  Bell, X, ChevronRight, Wallet, Clapperboard, Check, ArrowRight, ArrowLeft, FolderCheck,
+  Bell, X, ChevronRight, Settings, Clapperboard, Check, ArrowRight, ArrowLeft, FolderCheck,
 } from "lucide-react";
 import { supabase } from "../supabaseClient";
 import { useAuth } from "../lib/AuthContext";
@@ -206,13 +206,17 @@ export default function FounderDashboard() {
     setActivePanel(null);
   }
 
-  function handleDeleteAccount() {
+  async function handleDeleteAccount() {
     const confirmed = window.confirm(
-      "Delete your UGC Hub account? This action cannot be undone."
+      "Delete your UGC Hub account? Your account will be archived immediately and permanently removed in 30 days. Contact support to cancel during that window. This cannot be undone after the 30 days pass."
     );
-    if (confirmed) {
-      window.alert("Account deletion is not connected yet. No account was deleted.");
+    if (!confirmed) return;
+    const { error } = await supabase.rpc("request_own_account_deletion");
+    if (error) {
+      window.alert("Couldn't start account deletion. Please try again.");
+      return;
     }
+    await signOut();
   }
 
   return (
@@ -246,7 +250,7 @@ export default function FounderDashboard() {
             aria-expanded={drawerOpen}
             onClick={() => (drawerOpen ? closePanels() : openMenu())}
           >
-            <Wallet size={18} strokeWidth={1.9} />
+            <Settings size={18} strokeWidth={1.9} />
           </button>
           <button className={styles.signOut} onClick={signOut}>Sign out</button>
         </div>
