@@ -1,15 +1,10 @@
 import { useEffect, useState } from "react";
+import {
+  Bell, X, ChevronRight, Wallet, Clapperboard, Check, ArrowRight, ArrowLeft, FolderCheck,
+} from "lucide-react";
 import { supabase } from "../supabaseClient";
 import { useAuth } from "../lib/AuthContext";
 import styles from "./Dashboard.module.css";
-
-function MenuIcon() {
-  return <span className={styles.menuGlyph} aria-hidden="true"><i /><i /><i /></span>;
-}
-
-function BellIcon() {
-  return <span className={styles.bellGlyph} aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg></span>;
-}
 
 function CreatorSkeleton() {
   return (
@@ -209,6 +204,7 @@ export default function FounderDashboard() {
         <button className={styles.backdrop} aria-label="Close" onClick={closePanels} />
       )}
 
+      <div className={styles.appArea} style={{ marginLeft: 0 }}>
       <header className={styles.header}>
         <a href="/" className={`${styles.logo} ugcBrandMark`} aria-label="UGC Hub home">
           <span className="ugcBrandMark__ugc">UGC</span>
@@ -224,7 +220,7 @@ export default function FounderDashboard() {
               setNotificationsOpen((open) => !open);
             }}
           >
-            <BellIcon />
+            <Bell size={18} strokeWidth={1.9} />
             <span className={styles.notificationDot} />
           </button>
           <button
@@ -233,7 +229,7 @@ export default function FounderDashboard() {
             aria-expanded={drawerOpen}
             onClick={() => (drawerOpen ? closePanels() : openMenu())}
           >
-            <MenuIcon />
+            <Wallet size={18} strokeWidth={1.9} />
           </button>
           <button className={styles.signOut} onClick={signOut}>Sign out</button>
         </div>
@@ -243,10 +239,10 @@ export default function FounderDashboard() {
         <aside className={styles.notificationPanel} aria-label="Notifications">
           <div className={styles.panelHeader}>
             <div><span className={styles.panelEyebrow}>Updates</span><h2>Notifications</h2></div>
-            <button className={styles.closeButton} onClick={closePanels} aria-label="Close notifications">×</button>
+            <button className={styles.closeButton} onClick={closePanels} aria-label="Close notifications"><X size={18} strokeWidth={2} /></button>
           </div>
           <div className={styles.emptyState}>
-            <BellIcon />
+            <Bell size={26} strokeWidth={1.6} />
             <strong>You're all caught up</strong>
             <span>New creator activity and account updates will appear here.</span>
           </div>
@@ -256,7 +252,7 @@ export default function FounderDashboard() {
       <aside className={`${styles.drawer} ${drawerOpen ? styles.drawerOpen : ""}`} aria-hidden={!drawerOpen}>
         <div className={styles.drawerHeader}>
           <div><span className={styles.panelEyebrow}>Founder account</span><h2>Menu</h2></div>
-          <button className={styles.closeButton} onClick={closePanels} aria-label="Close menu">×</button>
+          <button className={styles.closeButton} onClick={closePanels} aria-label="Close menu"><X size={18} strokeWidth={2} /></button>
         </div>
 
         <div className={styles.accountCard}>
@@ -265,9 +261,9 @@ export default function FounderDashboard() {
         </div>
 
         <nav className={styles.drawerNav}>
-          <button className={styles.drawerItem} onClick={() => setActivePanel("profile")}><span>Profile information</span><b>›</b></button>
-          <button className={styles.drawerItem} onClick={() => setActivePanel("history")}><span>History</span><b>›</b></button>
-          <button className={styles.drawerItem} onClick={() => setActivePanel("saves")}><span>Saves</span><b>›</b></button>
+          <button className={styles.drawerItem} onClick={() => setActivePanel("profile")}><span>Profile information</span><ChevronRight size={16} strokeWidth={2.25} /></button>
+          <button className={styles.drawerItem} onClick={() => setActivePanel("history")}><span>History</span><ChevronRight size={16} strokeWidth={2.25} /></button>
+          <button className={styles.drawerItem} onClick={() => setActivePanel("saves")}><span>Saves</span><ChevronRight size={16} strokeWidth={2.25} /></button>
         </nav>
 
         {activePanel && (
@@ -279,13 +275,18 @@ export default function FounderDashboard() {
         )}
 
         <div className={styles.drawerFooter}>
-          <button className={`${styles.drawerItem} ${styles.deleteItem}`} onClick={handleDeleteAccount}><span>Delete account</span><b>›</b></button>
+          <button className={`${styles.drawerItem} ${styles.deleteItem}`} onClick={handleDeleteAccount}><span>Delete account</span><ChevronRight size={16} strokeWidth={2.25} /></button>
         </div>
       </aside>
 
       <main className={styles.main}>
-        <h1 className={styles.title}>Discover reaction clips</h1>
-        <p className={styles.subtitle}>Browse creators and preview every clip for free. Buy a bundle to unlock the full-quality originals.</p>
+        <div className={styles.pageIntro}>
+          <div>
+            <span className={styles.panelEyebrow}>Founder studio</span>
+            <h1 className={styles.title}>Discover reaction clips</h1>
+            <p className={styles.subtitle}>Browse creators and preview every clip for free. Buy a bundle to unlock the full-quality originals.</p>
+          </div>
+        </div>
 
         <nav className={styles.creatorTabs} aria-label="Browse view">
           <button className={view === "creators" ? styles.creatorTabActive : styles.creatorTab} onClick={() => setView("creators")}>Creators <b>{creators.length}</b></button>
@@ -369,7 +370,7 @@ export default function FounderDashboard() {
                       // #t=0.5 makes the browser show a frame from half a second in as the poster.
                       <video className={styles.cover} src={`${cover.url}#t=0.5`} preload="metadata" muted playsInline />
                     ) : (
-                      <div className={styles.coverEmpty}>🎬</div>
+                      <div className={styles.coverEmpty}><Clapperboard size={22} strokeWidth={1.6} /></div>
                     )}
                     <span className={styles.clipBadge}>{b.video_count} clips</span>
                   </div>
@@ -386,7 +387,7 @@ export default function FounderDashboard() {
                   )}
                   <div className={styles.libraryMeta}>
                     <strong>{formatPrice(b.price_cents)}</strong>
-                    {owned ? <span className={styles.ownedTag}>✓ Purchased</span> : <span className={styles.viewLink}>View bundle →</span>}
+                    {owned ? <span className={styles.ownedTag}><Check size={13} strokeWidth={2.5} />Purchased</span> : <span className={styles.viewLink}>View bundle <ArrowRight size={12} strokeWidth={2.25} style={{verticalAlign:"-1px"}} /></span>}
                   </div>
                 </div>
               );
@@ -401,7 +402,7 @@ export default function FounderDashboard() {
           const owned = purchasedBundleIds.has(b.id);
           return (
             <div className={styles.detail}>
-              <button className={styles.backLink} onClick={() => setOpenBundleId(null)}>← All bundles</button>
+              <button className={styles.backLink} onClick={() => setOpenBundleId(null)}><ArrowLeft size={13} strokeWidth={2.25} style={{verticalAlign:"-2px",marginRight:5}} />All bundles</button>
               <div className={styles.detailHead}>
                 <div>
                   <h2>{b.name}</h2>
@@ -411,7 +412,7 @@ export default function FounderDashboard() {
                 <div className={styles.buyBox}>
                   <strong>{formatPrice(b.price_cents)}</strong>
                   {owned ? (
-                    <span className={styles.ownedTag}>✓ Purchased</span>
+                    <span className={styles.ownedTag}><Check size={13} strokeWidth={2.5} />Purchased</span>
                   ) : (
                     <button className={styles.primaryAction} onClick={() => handleBuyBundle(b.id)} disabled={buyingBundleId === b.id}>
                       {buyingBundleId === b.id ? "Starting checkout…" : "Buy bundle"}
@@ -468,15 +469,15 @@ export default function FounderDashboard() {
                         className={styles.primaryAction}
                         style={{ display: "inline-block", marginTop: 10, textAlign: "center", textDecoration: "none" }}
                       >
-                        📁 Download all in Google Drive
+                        <FolderCheck size={14} strokeWidth={2.25} style={{verticalAlign:"-2px",marginRight:6}} />Download all in Google Drive
                       </a>
                     );
                   }
                   if (folder?.status === "creating" || folder?.status === "pending") {
-                    return <p style={{ fontSize: 12.5, color: "#999", marginTop: 10 }}>Preparing your files for download…</p>;
+                    return <p style={{ fontSize: 12.5, color: "var(--studio-ink-dim)", marginTop: 10 }}>Preparing your files for download…</p>;
                   }
                   if (folder?.status === "failed") {
-                    return <p style={{ fontSize: 12.5, color: "#c43f50", marginTop: 10 }}>We hit a snag preparing your download — please contact support and we'll sort it out.</p>;
+                    return <p style={{ fontSize: 12.5, color: "#ff6b5c", marginTop: 10 }}>We hit a snag preparing your download — please contact support and we'll sort it out.</p>;
                   }
                   return null;
                 })()}
@@ -493,6 +494,7 @@ export default function FounderDashboard() {
           </div>
         )}
       </main>
+      </div>
     </div>
   );
 }
