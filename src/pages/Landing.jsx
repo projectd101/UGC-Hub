@@ -1,3 +1,5 @@
+import GearField from "./GearField";
+import { heroGears } from "./heroGears";
 import { useState } from "react";
 import styles from "./Landing.module.css";
 
@@ -36,6 +38,7 @@ export default function Landing() {
       </div></header>
       <main>
         <section className={styles.hero}>
+          <GearField gears={heroGears} className={styles.heroGears} />
           <div className={styles.heroCopy}><span className={styles.eyebrow}>The UGC marketplace for real reactions</span><h1 className={`${styles.heroHeadline} landingHeroHeadline`}>Buy a library of reactions.<br /><em>Keep the same face.</em></h1><p className={styles.heroSub}>Get 50 or 100 high-quality facial reaction clips from one real creator. Browse by emotion and niche, choose a face that fits your brand, and build a consistent UGC library. No creator hunting, no mismatched footage—just a ready-to-use reaction bank built around a face your audience can recognize.</p><div className={styles.heroCtas}><button className={styles.primaryBtn} onClick={goToSignIn}>Browse creators</button><button className={styles.ghostBtn} onClick={goToSignIn}>Become a creator</button></div><div className={styles.heroProof}><span>Real people</span><span>9:16 clips</span><span>50–100 clips / bundle</span><span>Commercial use</span></div></div><div className={styles.heroVisual}><div className={`${styles.videoTile} ${styles.tileOne}`}><video src="/videos/1.mp4" autoPlay muted loop playsInline preload="metadata" /></div><div className={`${styles.videoTile} ${styles.tileTwo}`}><video src="/videos/2.mp4" autoPlay muted loop playsInline preload="metadata" /></div><div className={`${styles.videoTile} ${styles.tileThree}`}><video src="/videos/3.mp4" autoPlay muted loop playsInline preload="metadata" /></div></div>
         </section>
         <section id="marketplace" className={styles.marketplace}><div className={styles.sectionTop}><div><span className={styles.sectionKicker}>Marketplace</span><h2 className={styles.sectionHeadline}>Find the face your brand needs.</h2><p className={styles.sectionSub}>Every creator has a defined reaction library, niches, and video count.</p></div><button className={styles.textBtn} onClick={goToSignIn}>View all creators →</button></div>
