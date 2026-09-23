@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import styles from "./Landing.module.css";
-import { supabase } from "./supabaseClient";
+import { supabase } from "../supabaseClient";
 
 /**
  * NOTE ON DATA ACCESS
